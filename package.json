@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
-    "test": "node tests/test-persistence.js && node tests/test-save-manager.js && node tests/test-input-consumption.js && node tests/test-static-build.js && node tests/test-assets.js"
+    "test": "node tests/test-persistence.js && node tests/test-save-manager.js && node tests/test-input-consumption.js && node tests/test-responsive-minigames.js && node tests/test-static-build.js && node tests/test-assets.js"
   },
   "dependencies": {
     "express": "^4.21.0"

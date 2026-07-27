@@ -261,16 +261,37 @@ export default class SortingPanel {
     this.screenW = screenWidth;
     this.screenH = screenHeight;
 
-    // Calculate layout
-    const headerH = 55;
-    const footerH = 35;
-    const beltW = 90;
+    const compact = screenWidth < 600;
+    const compactLandscape = compact && screenHeight < 400;
+    const headerH = compact ? (compactLandscape ? 54 : 64) : 55;
+    const footerH = compact ? (compactLandscape ? 70 : 126) : 35;
+    const beltW = compact ? Math.min(76, screenWidth * 0.24) : 90;
     const beltX = Math.floor(screenWidth / 2 - beltW / 2);
     const beltY = headerH;
-    const beltH = screenHeight - headerH - footerH;
-    const exitConveyorLen = Math.min(200, (screenWidth - beltW) / 2 - 40);
+    const beltH = Math.max(compactLandscape ? 110 : 180, screenHeight - headerH - footerH);
+    const exitConveyorLen = Math.max(18, Math.min(200, (screenWidth - beltW) / 2 - (compact ? 12 : 40)));
+
+    const gateButtons = [];
+    if (compact) {
+      const columns = compactLandscape ? 4 : 2;
+      const gap = compactLandscape ? 4 : 8;
+      const margin = compactLandscape ? 6 : 10;
+      const buttonW = (screenWidth - margin * 2 - gap * (columns - 1)) / columns;
+      const buttonH = compactLandscape ? 48 : 48;
+      const startY = screenHeight - footerH + (compactLandscape ? 11 : 12);
+      for (let i = 0; i < NUM_CATEGORIES; i++) {
+        gateButtons.push({
+          x: margin + (i % columns) * (buttonW + gap),
+          y: startY + Math.floor(i / columns) * (buttonH + gap),
+          width: buttonW,
+          height: buttonH,
+        });
+      }
+    }
 
     this._layout = {
+      compact,
+      compactLandscape,
       headerH,
       footerH,
       beltX,
@@ -279,6 +300,7 @@ export default class SortingPanel {
       beltH,
       beltCX: beltX + beltW / 2,
       exitLen: exitConveyorLen,
+      gateButtons,
     };
   }
 
@@ -370,6 +392,13 @@ export default class SortingPanel {
   handleClick(mx, my) {
     if (!this.visible) return null;
     if (this.results) return { action: 'close' };
+    if (this.active && this._layout?.compact) {
+      const gateIndex = this._layout.gateButtons.findIndex(button =>
+        mx >= button.x && mx <= button.x + button.width &&
+        my >= button.y && my <= button.y + button.height
+      );
+      if (gateIndex >= 0) return { action: 'gate', gate: gateIndex + 1 };
+    }
     return null;
   }
 
@@ -416,21 +445,21 @@ export default class SortingPanel {
 
     // Title
     ctx.fillStyle = '#d4883e';
-    ctx.font = 'bold 18px monospace';
+    ctx.font = `bold ${L.compact ? 14 : 18}px monospace`;
     ctx.textAlign = 'center';
-    ctx.fillText('\u2709 POSTMASTER PAUL\'S MAIL SORTER', this.screenW / 2, 24);
+    ctx.fillText(L.compact ? '\u2709 PAUL\'S MAIL SORTER' : '\u2709 POSTMASTER PAUL\'S MAIL SORTER', this.screenW / 2, 24);
 
     // Score
     ctx.textAlign = 'left';
     ctx.font = 'bold 14px monospace';
     ctx.fillStyle = '#ffd700';
-    ctx.fillText(`\u2605 ${Math.round(this.displayScore)}`, 20, 46);
+    ctx.fillText(`\u2605 ${Math.round(this.displayScore)}`, L.compact ? 10 : 20, 49);
 
     // Streak
     if (this.streak > 1) {
       ctx.fillStyle = '#4eff7a';
       ctx.font = 'bold 12px monospace';
-      ctx.fillText(`x${this.streak}`, 120, 46);
+      ctx.fillText(`x${this.streak}`, L.compact ? 76 : 120, 49);
     }
 
     // Speed indicator
@@ -438,7 +467,7 @@ export default class SortingPanel {
     ctx.fillStyle = speedPct > 75 ? '#e74c3c' : speedPct > 50 ? '#f39c12' : '#3498db';
     ctx.font = '11px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(`SPD: ${speedPct}%`, this.screenW / 2, 46);
+    if (!L.compact) ctx.fillText(`SPD: ${speedPct}%`, this.screenW / 2, 46);
 
     // Timer
     const mins = Math.floor(this.timeLeft / 60);
@@ -453,7 +482,7 @@ export default class SortingPanel {
     } else {
       ctx.fillStyle = '#aaeeff';
     }
-    ctx.fillText(`${mins}:${secs.toString().padStart(2, '0')}`, this.screenW - 20, 46);
+    ctx.fillText(`${mins}:${secs.toString().padStart(2, '0')}`, this.screenW - (L.compact ? 10 : 20), 49);
 
     // === MAIN CONVEYOR BELT ===
     this._renderMainBelt(ctx, L);
@@ -484,11 +513,15 @@ export default class SortingPanel {
       ctx.globalAlpha = 1;
     }
 
-    // === FOOTER ===
-    ctx.fillStyle = '#445';
-    ctx.font = '11px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('Sort packages: W=Letter  A=Box  S=Parcel  D=Delicate  |  [ESC] to quit', this.screenW / 2, this.screenH - 12);
+    // === FOOTER / TOUCH CONTROLS ===
+    if (L.compact) {
+      this._renderTouchControls(ctx, L);
+    } else {
+      ctx.fillStyle = '#445';
+      ctx.font = '11px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Sort packages: W=Letter  A=Box  S=Parcel  D=Delicate  |  [ESC] to quit', this.screenW / 2, this.screenH - 12);
+    }
 
     ctx.restore();
   }
@@ -735,6 +768,7 @@ export default class SortingPanel {
   }
 
   _renderCategoryLabels(ctx, L) {
+    if (L.compact) return;
     const catKeys = ['letter', 'box', 'parcel', 'delicate'];
 
     for (let i = 0; i < 4; i++) {
@@ -811,13 +845,61 @@ export default class SortingPanel {
     }
   }
 
+  _renderTouchControls(ctx, L) {
+    ctx.fillStyle = 'rgba(20, 18, 30, 0.96)';
+    ctx.fillRect(0, this.screenH - L.footerH, this.screenW, L.footerH);
+    ctx.strokeStyle = '#d4883e';
+    ctx.beginPath();
+    ctx.moveTo(0, this.screenH - L.footerH);
+    ctx.lineTo(this.screenW, this.screenH - L.footerH);
+    ctx.stroke();
+
+    const catKeys = ['letter', 'box', 'parcel', 'delicate'];
+    for (let i = 0; i < L.gateButtons.length; i++) {
+      const button = L.gateButtons[i];
+      const isFlashing = this.gateFlash[i] > 0;
+      ctx.fillStyle = isFlashing ? `${CAT_COLORS[i]}66` : 'rgba(35, 32, 50, 0.96)';
+      ctx.fillRect(button.x, button.y, button.width, button.height);
+      ctx.strokeStyle = CAT_COLORS[i];
+      ctx.lineWidth = isFlashing ? 3 : 2;
+      ctx.strokeRect(button.x, button.y, button.width, button.height);
+
+      const iconSize = L.compactLandscape ? 22 : 30;
+      const iconX = button.x + (L.compactLandscape ? 6 : 10);
+      const iconY = button.y + (button.height - iconSize) / 2;
+      const sprite = this.sprites[catKeys[i]]?.[0];
+      if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+        ctx.drawImage(sprite, iconX, iconY, iconSize, iconSize);
+      } else {
+        ctx.fillStyle = CAT_COLORS[i];
+        ctx.fillRect(iconX, iconY, iconSize, iconSize);
+      }
+
+      ctx.fillStyle = CAT_COLORS[i];
+      ctx.font = `bold ${L.compactLandscape ? 10 : 13}px monospace`;
+      ctx.textAlign = 'left';
+      ctx.fillText(CAT_NAMES[i], iconX + iconSize + (L.compactLandscape ? 4 : 8), button.y + 21);
+      if (!L.compactLandscape) {
+        ctx.fillStyle = '#8f8f9f';
+        ctx.font = '9px monospace';
+        ctx.fillText(`Tap to sort \u00b7 ${CAT_KEYS[i]}`, iconX + iconSize + 8, button.y + 36);
+      }
+    }
+  }
+
   _renderResults(ctx) {
     const r = this.results;
-    const cx = this.screenW / 2;
+    const scale = Math.min(1, (this.screenW - 16) / 360, (this.screenH - 16) / 460);
+    const logicalW = this.screenW / scale;
+    const logicalH = this.screenH / scale;
+    const cx = logicalW / 2;
     const panelW = 360;
     const panelH = 460;
     const px = cx - panelW / 2;
-    const py = this.screenH / 2 - panelH / 2;
+    const py = logicalH / 2 - panelH / 2;
+
+    ctx.save();
+    ctx.scale(scale, scale);
 
     // Panel background
     ctx.fillStyle = 'rgba(15, 12, 25, 0.98)';
@@ -955,6 +1037,11 @@ export default class SortingPanel {
     ctx.fillStyle = '#556';
     ctx.font = '11px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('Click anywhere or press ESC to close', cx, py + panelH - 16);
+    ctx.fillText(
+      this.screenW < 600 ? 'Tap anywhere to close' : 'Click anywhere or press ESC to close',
+      cx,
+      py + panelH - 16,
+    );
+    ctx.restore();
   }
 }

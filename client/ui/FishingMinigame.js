@@ -141,13 +141,28 @@ export default class FishingMinigame {
     }
   }
 
+  getLayout(screenW, screenH) {
+    const compact = screenW < 600;
+    const width = compact ? 44 : this.barWidth;
+    const height = Math.min(this.barHeight, Math.max(150, screenH - (compact ? 150 : 80)));
+    return {
+      compact,
+      width,
+      height,
+      x: compact ? screenW - width - 28 : screenW - 80,
+      y: Math.max(42, (screenH - height) / 2),
+    };
+  }
+
   render(ctx, screenW, screenH) {
     if (!this.active) return;
 
-    const barX = screenW - 80;
-    const barY = (screenH - this.barHeight) / 2;
-    const bw = this.barWidth;
-    const bh = this.barHeight;
+    const layout = this.getLayout(screenW, screenH);
+    const { compact } = layout;
+    const bw = layout.width;
+    const bh = layout.height;
+    const barX = layout.x;
+    const barY = layout.y;
 
     // --- Outer frame ---
     ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
@@ -292,7 +307,7 @@ export default class FishingMinigame {
     ctx.textAlign = 'center';
     ctx.font = 'bold 11px monospace';
     ctx.fillStyle = '#ddd';
-    ctx.fillText('Hold Click', barX + bw / 2, barY - 12);
+    ctx.fillText(compact ? 'HOLD SCREEN' : 'Hold Click', barX + bw / 2, barY - 12);
 
     // Difficulty label
     const diffColors = { common: '#aaa', uncommon: '#2ecc71', rare: '#3498db', epic: '#9b59b6' };

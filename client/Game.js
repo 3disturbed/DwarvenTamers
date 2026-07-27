@@ -1009,6 +1009,14 @@ export default class Game {
         if (kb.wasJustPressed('KeyA')) this.sortingPanel.handleGateInput(2);
         if (kb.wasJustPressed('KeyS')) this.sortingPanel.handleGateInput(3);
         if (kb.wasJustPressed('KeyD')) this.sortingPanel.handleGateInput(4);
+
+        // Phone layout exposes four large category buttons.
+        if (actions.action || actions.screenTap) {
+          const result = this.sortingPanel.handleClick(uiMX, uiMY);
+          if (result?.action === 'gate') {
+            this.sortingPanel.handleGateInput(result.gate);
+          }
+        }
       }
 
       // Game finished — send score report to server

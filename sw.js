@@ -1,4 +1,4 @@
-const CACHE_NAME = 'soloheim-v7';
+const CACHE_NAME = 'soloheim-v8';
 const APP_SHELL = [
   './',
   './index.html',
