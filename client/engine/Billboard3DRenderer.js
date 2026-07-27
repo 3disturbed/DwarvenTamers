@@ -408,7 +408,7 @@ export default class Billboard3DRenderer {
       const texture = this._getTexture(sprite, `resource:${res.resourceId}`);
       this._placeBillboard(texture, res.x, worldY, drawSize, 0, {
         shadowTexture: this.resourceShadowTexture,
-        shadowWorldYOffset: drawSize * 0.5,
+        shadowWorldYOffset: drawSize * 0.25,
         shadowY: 0.1,
         shadowOpacity: 0.72,
         shadowScaleX: 1.06,
