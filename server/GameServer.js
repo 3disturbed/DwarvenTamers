@@ -895,6 +895,7 @@ export default class GameServer {
     const chunkX = Math.floor(spawnX / CHUNK_PIXEL_SIZE);
     const chunkY = Math.floor(spawnY / CHUNK_PIXEL_SIZE);
     await this.worldManager.getChunksAround(chunkX, chunkY);
+    this._ensureNearbyWildHorse(spawnX, spawnY);
 
     // Send join data
     const joinPc = entity.getComponent(PlayerComponent);
@@ -1271,6 +1272,58 @@ export default class GameServer {
       x: 512 + (Math.random() - 0.5) * 64,
       y: 512 + (Math.random() - 0.5) * 64,
     };
+  }
+
+  _ensureNearbyWildHorse(playerX, playerY) {
+    const horses = this.entityManager.getByTag('horse');
+    const nearbyRadius = 1800;
+    const nearbyRadiusSq = nearbyRadius * nearbyRadius;
+
+    for (const horse of horses) {
+      const pos = horse.getComponent(PositionComponent);
+      if (!pos) continue;
+      const dx = pos.x - playerX;
+      const dy = pos.y - playerY;
+      if ((dx * dx + dy * dy) <= nearbyRadiusSq) return;
+    }
+
+    const spawnPos = this._findWalkableHorseSpawn(playerX, playerY);
+    if (!spawnPos) return;
+
+    const horse = EntityFactory.createHorse({
+      x: spawnPos.x,
+      y: spawnPos.y,
+      config: {
+        id: 'wild_horse',
+        name: 'Wild Horse',
+        health: 80,
+        speed: 130,
+        color: '#8B6C42',
+        size: 30,
+        aggroRange: 160,
+        deaggroRange: 320,
+        isHorse: true,
+      },
+    });
+    this.entityManager.add(horse);
+  }
+
+  _findWalkableHorseSpawn(playerX, playerY) {
+    if (!this.tileCollisionMap) return null;
+
+    const minDist = 260;
+    const maxDist = 640;
+    for (let attempt = 0; attempt < 24; attempt++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = minDist + Math.random() * (maxDist - minDist);
+      const x = playerX + Math.cos(angle) * dist;
+      const y = playerY + Math.sin(angle) * dist;
+      if (!this.tileCollisionMap.isSolid(x, y)) {
+        return { x, y };
+      }
+    }
+
+    return null;
   }
 
   // Helper: get entity for a player connection
