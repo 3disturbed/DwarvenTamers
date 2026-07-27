@@ -2205,13 +2205,12 @@ export default class Game {
       this.damageNumbers.render(ctx, r.uiScale);
       r.endCamera();
     } else {
-      // First pass: terrain and fixed map overlays in 2D.
-      r.beginCamera(this.camera);
-      this.renderWorld(r);
-      this.renderLandPlots(r);
-      r.endCamera();
+      // First pass: bake visible terrain into a 3D ground plane texture.
+      this.billboard3d.updateGround(this.camera, (groundCtx, viewW, viewH) => {
+        this.worldManager.render(groundCtx, this.camera, viewW, viewH, this.resources);
+      });
 
-      // Second pass: entities as lit 3D billboards.
+      // Second pass: entities as lit 3D billboards over that 3D ground.
       const facing = this.getFacingOffset();
       const actions = this.input.actions;
       const localMoving = actions.moveX !== 0 || actions.moveY !== 0;
@@ -2233,6 +2232,7 @@ export default class Game {
 
       // Third pass: keep world-space effects/hints over the 3D layer.
       r.beginCamera(this.camera);
+      this.renderLandPlots(r);
       this.renderPlacementGhost(r);
       this.renderDamageZones(r);
       this.renderProjectiles(r);

@@ -47,6 +47,19 @@ export default class Billboard3DRenderer {
     this.scene.add(this.sun);
     this.scene.add(this.rim);
 
+    this.groundCanvas = document.createElement('canvas');
+    this.groundCtx = this.groundCanvas.getContext('2d');
+    this.groundTexture = new THREE.CanvasTexture(this.groundCanvas);
+    this.groundTexture.magFilter = THREE.NearestFilter;
+    this.groundTexture.minFilter = THREE.NearestFilter;
+    this.groundTexture.generateMipmaps = false;
+    this.groundTexture.colorSpace = THREE.SRGBColorSpace;
+    const groundMat = new THREE.MeshBasicMaterial({ map: this.groundTexture });
+    this.groundMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), groundMat);
+    this.groundMesh.rotation.x = -Math.PI / 2;
+    this.groundMesh.position.y = 0;
+    this.scene.add(this.groundMesh);
+
     this.planeGeometry = new THREE.PlaneGeometry(1, 1);
 
     this.lastSize = { w: 0, h: 0, dpr: 1 };
@@ -78,6 +91,9 @@ export default class Billboard3DRenderer {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+
+    this.groundCanvas.width = w;
+    this.groundCanvas.height = h;
   }
 
   beginFrame(gameCamera) {
@@ -104,6 +120,33 @@ export default class Billboard3DRenderer {
       this.camera.position.y + 220,
       this.camera.position.z + 130,
     );
+  }
+
+  updateGround(gameCamera, drawGround) {
+    if (!this.enabled) return;
+
+    const w = this.groundCanvas.width;
+    const h = this.groundCanvas.height;
+    const ctx = this.groundCtx;
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#161726';
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.save();
+    ctx.translate(w / 2, h / 2);
+    ctx.scale(gameCamera.zoom, gameCamera.zoom);
+    ctx.translate(-gameCamera.x, -gameCamera.y);
+    drawGround(ctx, w, h);
+    ctx.restore();
+
+    this.groundTexture.needsUpdate = true;
+
+    const worldW = w / Math.max(0.001, gameCamera.zoom);
+    const worldH = h / Math.max(0.001, gameCamera.zoom);
+    this.groundMesh.scale.set(worldW, worldH, 1);
+    this.groundMesh.position.set(gameCamera.x, 0, gameCamera.y);
   }
 
   render(data) {
@@ -283,14 +326,13 @@ export default class Billboard3DRenderer {
 
     mesh.visible = true;
     mesh.scale.set(size, size, 1);
-    mesh.position.set(worldX, (size * 0.5) + liftY, worldY);
+    mesh.position.set(worldX, (size * 0.46) + liftY, worldY);
 
-    mesh.lookAt(this.camera.position.x, mesh.position.y + (size * 0.35), this.camera.position.z);
-
-    // Gentle distance fade for depth haze.
-    const d = mesh.position.distanceTo(this.camera.position);
-    const fade = 1 - Math.max(0, (d - 620) / 620);
-    mesh.material.opacity = Math.max(0.35, Math.min(1, fade));
+    // Cylindrical billboarding: only yaw, so sprites stay upright and stop wobbling.
+    const dx = this.camera.position.x - mesh.position.x;
+    const dz = this.camera.position.z - mesh.position.z;
+    mesh.rotation.set(0, Math.atan2(dx, dz), 0);
+    mesh.material.opacity = 1;
   }
 
   _acquireMesh(texture) {
