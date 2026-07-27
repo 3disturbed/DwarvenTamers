@@ -2,6 +2,7 @@ import { PLAYER_SPEED, PLAYER_SIZE, TILE_SIZE, CHUNK_PIXEL_SIZE, HORSE_SPEED_MUL
 import { ITEM_DB } from '../shared/ItemTypes.js';
 import GameLoop from './engine/GameLoop.js';
 import Renderer from './engine/Renderer.js';
+import Billboard3DRenderer from './engine/Billboard3DRenderer.js';
 import Camera from './engine/Camera.js';
 import InputManager from './engine/InputManager.js';
 import TouchControls from './ui/TouchControls.js';
@@ -57,6 +58,7 @@ export default class Game {
   constructor(canvas) {
     this.canvas = canvas;
     this.renderer = new Renderer(canvas);
+    this.billboard3d = new Billboard3DRenderer(canvas);
     this.camera = new Camera();
     this.input = new InputManager(canvas);
     this.network = new NetworkClient();
@@ -2180,26 +2182,65 @@ export default class Game {
   render(interpolation) {
     const r = this.renderer;
     const ctx = r.ctx;
+    const use3d = this.billboard3d?.enabled;
 
     r.clear();
 
-    // World-space rendering
-    r.beginCamera(this.camera);
-    this.renderWorld(r);
-    this.renderLandPlots(r);
-    this.renderResources(r);
-    this.renderStations(r);
-    this.renderNPCs(r);
-    this.renderWildHorses(r);
-    this.renderPlacementGhost(r);
-    this.renderDamageZones(r);
-    this.renderEnemies(r);
-    this.renderProjectiles(r);
-    this.particles.render(ctx);
-    this.renderPlayers(r);
-    this.renderFishingBobber(r);
-    this.damageNumbers.render(ctx, r.uiScale);
-    r.endCamera();
+    if (!use3d) {
+      // World-space rendering (original 2D path)
+      r.beginCamera(this.camera);
+      this.renderWorld(r);
+      this.renderLandPlots(r);
+      this.renderResources(r);
+      this.renderStations(r);
+      this.renderNPCs(r);
+      this.renderWildHorses(r);
+      this.renderPlacementGhost(r);
+      this.renderDamageZones(r);
+      this.renderEnemies(r);
+      this.renderProjectiles(r);
+      this.particles.render(ctx);
+      this.renderPlayers(r);
+      this.renderFishingBobber(r);
+      this.damageNumbers.render(ctx, r.uiScale);
+      r.endCamera();
+    } else {
+      // First pass: terrain and fixed map overlays in 2D.
+      r.beginCamera(this.camera);
+      this.renderWorld(r);
+      this.renderLandPlots(r);
+      r.endCamera();
+
+      // Second pass: entities as lit 3D billboards.
+      const facing = this.getFacingOffset();
+      const actions = this.input.actions;
+      const localMoving = actions.moveX !== 0 || actions.moveY !== 0;
+      this.billboard3d.beginFrame(this.camera);
+      this.billboard3d.render({
+        localPlayer: this.localPlayer,
+        remotePlayers: this.remotePlayers,
+        enemies: this.enemies,
+        resources: this.resources,
+        stations: this.stations,
+        npcs: this.npcs,
+        hasHorse: this.hasHorse,
+        mounted: this.mounted,
+        followHorse: this.followHorse,
+        localMoving,
+        localFacingRight: facing.x > 0,
+      });
+      this.billboard3d.composite(ctx, r.width, r.height);
+
+      // Third pass: keep world-space effects/hints over the 3D layer.
+      r.beginCamera(this.camera);
+      this.renderPlacementGhost(r);
+      this.renderDamageZones(r);
+      this.renderProjectiles(r);
+      this.particles.render(ctx);
+      this.renderFishingBobber(r);
+      this.damageNumbers.render(ctx, r.uiScale);
+      r.endCamera();
+    }
 
     // Screen-space UI (scaled)
     r.beginUI();

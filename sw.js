@@ -5,6 +5,7 @@ const APP_SHELL = [
   './manifest.webmanifest',
   './icon.svg',
   './client/main.js',
+  './client/engine/Billboard3DRenderer.js',
   './client/input/consumePointerAction.js',
   './client/pwa.js',
   './client/onboarding.js',
