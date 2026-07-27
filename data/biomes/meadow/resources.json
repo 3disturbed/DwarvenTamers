@@ -50,7 +50,7 @@
       "name": "Stone Deposit",
       "tool": "pickaxe",
       "toolTier": 0,
-      "drops": [{ "item": "stone", "min": 20, "max": 30 }],
+      "drops": [{ "item": "stone", "min": 20, "max": 30 }, { "item": "flint", "chance": 0.22, "min": 1, "max": 2 }],
       "health": 40,
       "respawnTime": 300,
       "minGradient": 0.0,

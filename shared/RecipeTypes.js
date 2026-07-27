@@ -19,6 +19,18 @@ export const RECIPE_DB = {
     ingredients: [{ itemId: 'stone', count: 3 }, { itemId: 'stick', count: 2 }],
     results: [{ itemId: 'stone_hatchet', count: 1 }],
   },
+  flint_pickaxe: {
+    id: 'flint_pickaxe', name: 'Flint Pickaxe',
+    station: 'workbench', stationLevel: 1,
+    ingredients: [{ itemId: 'flint', count: 3 }, { itemId: 'stick', count: 2 }],
+    results: [{ itemId: 'flint_pickaxe', count: 1 }],
+  },
+  flint_hatchet: {
+    id: 'flint_hatchet', name: 'Flint Hatchet',
+    station: 'workbench', stationLevel: 1,
+    ingredients: [{ itemId: 'flint', count: 3 }, { itemId: 'stick', count: 2 }],
+    results: [{ itemId: 'flint_hatchet', count: 1 }],
+  },
   bone_pickaxe: {
     id: 'bone_pickaxe', name: 'Bone Pickaxe',
     station: 'workbench', stationLevel: 1,
@@ -44,6 +56,12 @@ export const RECIPE_DB = {
     station: 'workbench', stationLevel: 1,
     ingredients: [{ itemId: 'wood', count: 2 }],
     results: [{ itemId: 'oak_plank', count: 1 }],
+  },
+  dowel: {
+    id: 'dowel', name: 'Dowel',
+    station: 'workbench', stationLevel: 1,
+    ingredients: [{ itemId: 'wood', count: 1 }],
+    results: [{ itemId: 'dowel', count: 2 }],
   },
   cured_leather: {
     id: 'cured_leather', name: 'Cured Leather',
@@ -1439,7 +1457,7 @@ export const RECIPE_DB = {
   build_wooden_chest: {
     id: 'build_wooden_chest', name: 'Build Wooden Chest',
     station: 'hand', stationLevel: 0,
-    ingredients: [{ itemId: 'wood', count: 10 }, { itemId: 'stick', count: 5 }],
+    ingredients: [{ itemId: 'wood', count: 10 }, { itemId: 'dowel', count: 5 }],
     results: [],
     placesStation: 'wooden_chest',
   },

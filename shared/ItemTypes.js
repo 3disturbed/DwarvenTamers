@@ -779,6 +779,20 @@ export const ITEM_DB = {
     description: 'Chops oak and birch.',
   },
 
+  // --- Flint (Tier 0) ---
+  flint_pickaxe: {
+    id: 'flint_pickaxe', name: 'Flint Pickaxe', type: 'equipment', slot: 'tool',
+    toolType: 'pickaxe', toolTier: 0, tier: 0, rarity: 'common', gemSlots: 0,
+    statBonuses: {},
+    description: 'A sharper primitive pickaxe for early mining.',
+  },
+  flint_hatchet: {
+    id: 'flint_hatchet', name: 'Flint Hatchet', type: 'equipment', slot: 'tool',
+    toolType: 'axe', toolTier: 0, tier: 0, rarity: 'common', gemSlots: 0,
+    statBonuses: {},
+    description: 'A sharper primitive hatchet for early woodcutting.',
+  },
+
   // --- Bone (Tier 1 stepping stone) ---
   bone_pickaxe: {
     id: 'bone_pickaxe', name: 'Bone Pickaxe', type: 'equipment', slot: 'tool',
@@ -905,6 +919,10 @@ export const ITEM_DB = {
     id: 'stick', name: 'Stick', type: 'material', stackable: true, maxStack: 50,
     description: 'A sturdy stick picked up from the ground.',
   },
+  dowel: {
+    id: 'dowel', name: 'Dowel', type: 'material', stackable: true, maxStack: 50,
+    description: 'A carved wooden peg for joinery and crafting.',
+  },
   wood: {
     id: 'wood', name: 'Wood', type: 'material', stackable: true, maxStack: 50,
     description: 'A piece of wood.',
@@ -912,6 +930,10 @@ export const ITEM_DB = {
   stone: {
     id: 'stone', name: 'Stone', type: 'material', stackable: true, maxStack: 50,
     description: 'A rough stone.',
+  },
+  flint: {
+    id: 'flint', name: 'Flint', type: 'material', stackable: true, maxStack: 50,
+    description: 'A hard, sharp stone used for primitive tools.',
   },
   copper_ore: {
     id: 'copper_ore', name: 'Copper Ore', type: 'material', stackable: true, maxStack: 50,
