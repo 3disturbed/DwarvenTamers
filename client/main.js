@@ -127,6 +127,7 @@ function startGame() {
   // Fullscreen button for mobile - only show on touch devices when not fullscreen
   const fsBtn = document.getElementById('fullscreen-btn');
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  let lastViewportSignature = `${window.innerWidth}x${window.innerHeight}`;
 
   function updateFullscreenBtn() {
     const isFullscreen = !!document.fullscreenElement;
@@ -139,5 +140,17 @@ function startGame() {
     });
     document.addEventListener('fullscreenchange', updateFullscreenBtn);
     updateFullscreenBtn();
+  }
+
+  if (isTouchDevice) {
+    const reloadForOrientationChange = () => {
+      const nextViewportSignature = `${window.innerWidth}x${window.innerHeight}`;
+      if (nextViewportSignature === lastViewportSignature) return;
+      lastViewportSignature = nextViewportSignature;
+      window.location.reload();
+    };
+
+    window.addEventListener('orientationchange', reloadForOrientationChange);
+    window.screen?.orientation?.addEventListener?.('change', reloadForOrientationChange);
   }
 }
