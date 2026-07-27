@@ -18,11 +18,43 @@ initializeOnboarding();
 initializeSaveManager();
 startGame();
 
+const BRAND_SPLASH_MS = 1850;
+
 function startGame() {
   const canvas = document.getElementById('game');
+  const brandSplash = document.getElementById('brand-splash');
   const splashBar = document.getElementById('splash-bar');
   const splashText = document.getElementById('splash-text');
   const splash = document.getElementById('splash');
+  let loaderReady = false;
+  let brandFinished = !brandSplash;
+  let gameStarted = false;
+
+  const maybeStartGame = () => {
+    if (gameStarted || !loaderReady || !brandFinished) return;
+    gameStarted = true;
+    if (splashText) splashText.textContent = 'Starting...';
+    const game = new Game(canvas);
+    game.start();
+    if (splash) {
+      splash.classList.add('fade-out');
+      setTimeout(() => splash.remove(), 700);
+    }
+  };
+
+  if (splash) {
+    splash.classList.add('pre-splash-hidden');
+  }
+
+  if (brandSplash) {
+    setTimeout(() => {
+      brandSplash.classList.add('fade-out');
+      splash?.classList.remove('pre-splash-hidden');
+      setTimeout(() => brandSplash.remove(), 750);
+      brandFinished = true;
+      maybeStartGame();
+    }, BRAND_SPLASH_MS);
+  }
 
   // Track sprite loading progress
   const loaders = [
@@ -48,14 +80,8 @@ function startGame() {
       if (splashText) splashText.textContent = `Loading ${l.name}... ${pct}%`;
     })
   )).then(() => {
-    if (splashText) splashText.textContent = 'Starting...';
-    const game = new Game(canvas);
-    game.start();
-    // Fade out splash
-    if (splash) {
-      splash.classList.add('fade-out');
-      setTimeout(() => splash.remove(), 700);
-    }
+    loaderReady = true;
+    maybeStartGame();
   });
 
   // Fullscreen button for mobile - only show on touch devices when not fullscreen
