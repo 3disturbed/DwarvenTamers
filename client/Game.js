@@ -2903,8 +2903,9 @@ export default class Game {
 
   loadExploredChunks(playerId) {
     try {
-      const key = `darkheim_explored_${playerId}`;
-      const raw = localStorage.getItem(key);
+      const key = `soloheim:explored:${playerId}`;
+      const legacyKey = `darkheim_explored_${playerId}`;
+      const raw = localStorage.getItem(key) || localStorage.getItem(legacyKey);
       if (raw) {
         const arr = JSON.parse(raw);
         for (const k of arr) {
@@ -2912,14 +2913,17 @@ export default class Game {
         }
       }
       // Also load biome cache
-      const biomeKey = `darkheim_biomes_${playerId}`;
-      const biomeRaw = localStorage.getItem(biomeKey);
+      const biomeKey = `soloheim:biomes:${playerId}`;
+      const legacyBiomeKey = `darkheim_biomes_${playerId}`;
+      const biomeRaw = localStorage.getItem(biomeKey) || localStorage.getItem(legacyBiomeKey);
       if (biomeRaw) {
         const obj = JSON.parse(biomeRaw);
         for (const [k, v] of Object.entries(obj)) {
           this.biomeCache.set(k, v);
         }
       }
+      if (localStorage.getItem(legacyKey)) localStorage.removeItem(legacyKey);
+      if (localStorage.getItem(legacyBiomeKey)) localStorage.removeItem(legacyBiomeKey);
     } catch (e) {
       // Ignore corrupted data
     }
@@ -2929,10 +2933,10 @@ export default class Game {
     try {
       const playerId = this.localPlayer ? this.localPlayer.id : null;
       if (!playerId) return;
-      const key = `darkheim_explored_${playerId}`;
+      const key = `soloheim:explored:${playerId}`;
       localStorage.setItem(key, JSON.stringify([...this.exploredChunks]));
       // Also save biome cache
-      const biomeKey = `darkheim_biomes_${playerId}`;
+      const biomeKey = `soloheim:biomes:${playerId}`;
       const obj = {};
       for (const [k, v] of this.biomeCache) {
         obj[k] = v;

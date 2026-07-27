@@ -10,9 +10,7 @@
     "test": "node tests/test-persistence.js && node tests/test-save-manager.js && node tests/test-static-build.js && node tests/test-assets.js"
   },
   "dependencies": {
-    "express": "^4.21.0",
-    "simplex-noise": "^4.0.3",
-    "socket.io": "^4.7.5"
+    "express": "^4.21.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
