@@ -37,6 +37,7 @@ for (const path of [
   '../client/pwa.js',
   '../client/onboarding.js',
   '../client/save-manager.js',
+  '../.nojekyll',
 ]) {
   await access(new URL(path, import.meta.url));
 }

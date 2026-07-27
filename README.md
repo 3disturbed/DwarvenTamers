@@ -11,6 +11,10 @@ data are saved in browser storage under a fixed `solo-player` identity.
 The repository is directly compatible with GitHub Pages, including project
 paths such as `/SoloHiem/`.
 
+Every push to `main` runs the persistence, save-backup, static-build, and asset
+integrity suites before GitHub Pages deployment. Pull requests run the same
+production checks without deploying.
+
 ## Run
 
 Requires Node.js 18 or newer.
@@ -30,3 +34,9 @@ The Node host is optional and remains useful for local development. GitHub
 Pages can serve `index.html` directly; no WebSocket or server process is
 required. World generation, combat, crafting, NPCs, quests, and persistence all
 run locally in the browser.
+
+## Test
+
+```sh
+npm test
+```
