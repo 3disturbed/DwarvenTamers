@@ -34,6 +34,7 @@ export default class TouchInput {
     this.pinchStartDist = 0;
     this.pinchCurrentDist = 0;
     this._pinchJustStarted = false;
+    this.uiMode = false;
 
     canvas.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
     canvas.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
@@ -58,15 +59,17 @@ export default class TouchInput {
       // Track all touches for tap detection and scroll origin
       this._pendingTouches.set(touch.identifier, { x: tx, y: ty, time: performance.now(), lastY: ty });
 
-      // Check button zones first
+      // Check gameplay button zones first. Modal UI owns the whole canvas.
       let hitButton = false;
-      for (const zone of this.buttonZones) {
-        const dx = tx - zone.x;
-        const dy = ty - zone.y;
-        if (dx * dx + dy * dy < zone.radius * zone.radius) {
-          this.buttonStates.set(zone.id, { pressed: true, justPressed: true, touchId: touch.identifier });
-          hitButton = true;
-          break;
+      if (!this.uiMode) {
+        for (const zone of this.buttonZones) {
+          const dx = tx - zone.x;
+          const dy = ty - zone.y;
+          if (dx * dx + dy * dy < zone.radius * zone.radius) {
+            this.buttonStates.set(zone.id, { pressed: true, justPressed: true, touchId: touch.identifier });
+            hitButton = true;
+            break;
+          }
         }
       }
       if (hitButton) {
@@ -76,7 +79,7 @@ export default class TouchInput {
       }
 
       // Left half = move stick
-      if (tx < halfW && this.leftStick.touchId === null) {
+      if (!this.uiMode && tx < halfW && this.leftStick.touchId === null) {
         this.leftStick.active = true;
         this.leftStick.touchId = touch.identifier;
         this.leftStick.originX = tx;
@@ -85,7 +88,7 @@ export default class TouchInput {
         this.leftStick.y = 0;
       }
       // Right half = aim stick
-      else if (tx >= halfW && this.rightStick.touchId === null) {
+      else if (!this.uiMode && tx >= halfW && this.rightStick.touchId === null) {
         this.rightStick.active = true;
         this.rightStick.touchId = touch.identifier;
         this.rightStick.originX = tx;
@@ -147,7 +150,7 @@ export default class TouchInput {
           // Touch moved enough to be a drag — start tracking scroll
           if (this._scrollTouchId === null && touch.identifier !== this.leftStick.touchId && touch.identifier !== this.rightStick.touchId) {
             this._scrollTouchId = touch.identifier;
-            this._scrollLastY = ty;
+            this._scrollLastY = pending.y;
           }
           this._pendingTouches.delete(touch.identifier);
         }
@@ -280,6 +283,15 @@ export default class TouchInput {
       stick.x = 0;
       stick.y = 0;
     }
+  }
+
+  setUiMode(enabled) {
+    const next = Boolean(enabled);
+    if (next && !this.uiMode) {
+      this.cancelMovement();
+      this.buttonStates.clear();
+    }
+    this.uiMode = next;
   }
 
   update() {

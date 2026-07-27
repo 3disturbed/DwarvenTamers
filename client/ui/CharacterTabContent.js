@@ -100,9 +100,9 @@ export default class CharacterTabContent {
     const totalH = this._totalContentHeight(false);
     const maxScroll = Math.max(0, totalH - this.contentH);
     if (delta > 0) {
-      this.scrollOffset = Math.min(this.scrollOffset + 16, maxScroll);
-    } else if (delta < 0) {
       this.scrollOffset = Math.max(this.scrollOffset - 16, 0);
+    } else if (delta < 0) {
+      this.scrollOffset = Math.min(this.scrollOffset + 16, maxScroll);
     }
     return true;
   }

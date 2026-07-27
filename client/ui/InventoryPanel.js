@@ -125,9 +125,9 @@ export default class InventoryPanel {
   handleScroll(delta) {
     const maxScroll = Math.max(0, this._cachedItems.length - this._visibleRows);
     if (delta > 0) {
-      this.scrollOffset = Math.min(this.scrollOffset + 1, maxScroll);
-    } else if (delta < 0) {
       this.scrollOffset = Math.max(this.scrollOffset - 1, 0);
+    } else if (delta < 0) {
+      this.scrollOffset = Math.min(this.scrollOffset + 1, maxScroll);
     }
     return true;
   }

@@ -111,7 +111,7 @@ export default class QuestPanel {
     if (!this.visible) return;
     this.scrollOffset = Math.max(0, Math.min(
       this.quests.length - 1,
-      this.scrollOffset + (delta > 0 ? 1 : -1)
+      this.scrollOffset + (delta > 0 ? -1 : 1)
     ));
   }
 

@@ -886,6 +886,15 @@ export default class Game {
   }
 
   update(dt) {
+    const touchUiActive = this.worldMap.visible || this.panelsOpen ||
+      this.craftingOpen || this.upgradeOpen || this.skillsOpen ||
+      this.dialogOpen || this.questPanelOpen || this.shopOpen ||
+      this.chestOpen || this.fishingRodOpen || this.animalPenOpen ||
+      this.petCodexOpen || this.mailJobOpen || this.contextMenu.visible ||
+      this.inPetBattle || this.inPvpBattle || this.inSorting ||
+      this.inAlchemy || this.inFishmonger || this.isDead;
+    this.input.touch.setUiMode(touchUiActive);
+
     // Poll input
     const actions = this.input.update(this.camera, this.renderer);
     const r = this.renderer;
@@ -1542,6 +1551,10 @@ export default class Game {
         this.animalPenPanel.handleScroll(actions.scrollDelta);
       } else if (this.petCodexOpen) {
         this.petCodexPanel.handleScroll(actions.scrollDelta);
+      } else if (this.questPanelOpen) {
+        this.questPanel.handleScroll(actions.scrollDelta);
+      } else if (this.mailJobOpen) {
+        this.mailJobPanel.handleScroll(actions.scrollDelta);
       } else if (this.shopOpen) {
         this.shopPanel.handleScroll(actions.scrollDelta);
       } else if (this.worldMap.visible) {

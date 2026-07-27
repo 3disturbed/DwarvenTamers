@@ -225,7 +225,7 @@ export default class ChestPanel {
 
   handleScroll(delta) {
     if (!this.visible) return;
-    this.scrollOffset += delta > 0 ? 1 : -1;
+    this.scrollOffset += delta > 0 ? -1 : 1;
     this.scrollOffset = Math.max(0, this.scrollOffset);
   }
 

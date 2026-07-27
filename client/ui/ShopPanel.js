@@ -57,7 +57,7 @@ export default class ShopPanel {
     const listH = this._listHeight();
     const contentH = items.length * ROW_H;
     const maxScroll = Math.max(0, contentH - listH);
-    this.scrollOffset = Math.max(0, Math.min(maxScroll, this.scrollOffset + delta * ROW_H));
+    this.scrollOffset = Math.max(0, Math.min(maxScroll, this.scrollOffset - delta * ROW_H));
   }
 
   handleClick(mx, my, inventory) {

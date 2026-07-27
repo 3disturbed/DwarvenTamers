@@ -52,7 +52,7 @@ export default class MailJobPanel {
     }
 
     // Check available job accept buttons
-    const listY = this.y + 60;
+    const listY = this.y + 60 - this.scrollOffset * 44;
     const entryH = 44;
 
     // Active jobs section
@@ -85,7 +85,14 @@ export default class MailJobPanel {
 
   handleScroll(delta) {
     if (!this.visible) return;
-    this.scrollOffset = Math.max(0, this.scrollOffset + (delta > 0 ? 1 : -1));
+    const sectionRows = this.active.length > 0 ? 1 : 0;
+    const totalRows = this.active.length + this.available.length + sectionRows;
+    const visibleRows = Math.max(1, Math.floor((this.height - 80) / 44));
+    const maxScroll = Math.max(0, totalRows - visibleRows);
+    this.scrollOffset = Math.max(0, Math.min(
+      maxScroll,
+      this.scrollOffset + (delta > 0 ? -1 : 1),
+    ));
   }
 
   render(ctx) {
@@ -126,9 +133,14 @@ export default class MailJobPanel {
     ctx.lineTo(this.x + this.width - 10, this.y + 48);
     ctx.stroke();
 
-    const listY = this.y + 60;
+    const listY = this.y + 60 - this.scrollOffset * 44;
     const entryH = 44;
     let currentY = listY;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(this.x + 4, this.y + 52, this.width - 8, this.height - 74);
+    ctx.clip();
 
     // Active jobs section
     if (this.active.length > 0) {
@@ -223,6 +235,8 @@ export default class MailJobPanel {
       ctx.textAlign = 'center';
       ctx.fillText('No jobs available', this.x + this.width / 2, currentY + 20);
     }
+
+    ctx.restore();
 
     // Close hint
     ctx.fillStyle = '#666';
