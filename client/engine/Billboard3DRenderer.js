@@ -117,6 +117,11 @@ export default class Billboard3DRenderer {
     }
   }
 
+  _toSceneZ(worldY) {
+    // North-up convention: smaller world Y should be farther up-screen.
+    return -worldY;
+  }
+
   _resizeFromHost() {
     if (!this.enabled) return;
     const rect = this.hostCanvas.getBoundingClientRect();
@@ -145,7 +150,7 @@ export default class Billboard3DRenderer {
 
     const zoom = Math.max(0.4, gameCamera.zoom || 1);
     const targetX = gameCamera.x;
-    const targetZ = gameCamera.y;
+    const targetZ = this._toSceneZ(gameCamera.y);
     const distance = CAMERA_ORBIT_DISTANCE / zoom;
     const pitchRad = (CAMERA_PITCH_DEG * Math.PI) / 180;
     const horizontalOffset = Math.cos(pitchRad) * distance;
@@ -154,7 +159,7 @@ export default class Billboard3DRenderer {
     const desiredPos = new THREE.Vector3(
       targetX - distance * CAMERA_SIDE_OFFSET,
       verticalOffset,
-      targetZ + horizontalOffset,
+      targetZ - horizontalOffset,
     );
     const desiredFocus = new THREE.Vector3(targetX, 0, targetZ);
 
@@ -221,7 +226,7 @@ export default class Billboard3DRenderer {
     const worldW = w / Math.max(0.001, gameCamera.zoom);
     const worldH = h / Math.max(0.001, gameCamera.zoom);
     this.groundMesh.scale.set(worldW, worldH, 1);
-    this.groundMesh.position.set(gameCamera.x, 0, gameCamera.y);
+    this.groundMesh.position.set(gameCamera.x, 0, this._toSceneZ(gameCamera.y));
   }
 
   render(data) {
@@ -267,7 +272,7 @@ export default class Billboard3DRenderer {
           if (index >= MAX_WALL_INSTANCES) break;
 
           const wx = ox + tx * TILE_SIZE + TILE_SIZE * 0.5;
-          const wz = oy + ty * TILE_SIZE + TILE_SIZE * 0.5;
+          const wz = this._toSceneZ(oy + ty * TILE_SIZE + TILE_SIZE * 0.5);
 
           const dx = wx - centerX;
           const dz = wz - centerZ;
@@ -449,7 +454,7 @@ export default class Billboard3DRenderer {
 
     mesh.visible = true;
     mesh.scale.set(size, size, 1);
-    mesh.position.set(worldX, (size * 0.46) + liftY, worldY);
+    mesh.position.set(worldX, (size * 0.46) + liftY, this._toSceneZ(worldY));
 
     // Cylindrical billboarding: only yaw, so sprites stay upright and stop wobbling.
     const dx = this.camera.position.x - mesh.position.x;
@@ -463,7 +468,7 @@ export default class Billboard3DRenderer {
   _placeShadow(worldX, worldY, size, liftY = 0) {
     const shadow = this._acquireShadowMesh();
     shadow.visible = true;
-    shadow.position.set(worldX, 0.04, worldY);
+    shadow.position.set(worldX, 0.04, this._toSceneZ(worldY));
     shadow.rotation.set(-Math.PI / 2, 0, 0);
     const scale = size * (0.8 + Math.max(0, liftY) * 0.01);
     shadow.scale.set(scale, scale * 0.68, 1);
