@@ -87,7 +87,8 @@ export default class Billboard3DRenderer {
 
     this.wallGeometry = new THREE.BoxGeometry(TILE_SIZE, 1, TILE_SIZE);
     this.wallMaterial = new THREE.MeshStandardMaterial({
-      color: 0x6a7380,
+      color: 0xffffff,
+      map: this.groundTexture,
       roughness: 0.95,
       metalness: 0.02,
     });
