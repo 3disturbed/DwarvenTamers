@@ -290,9 +290,11 @@ export default class ClientChunk {
   }
 
   // Render resource nodes in this chunk
-  renderResources(ctx) {
+  renderResources(ctx, liveResourcePositions = null) {
     for (const r of this.resources) {
       if (r.depleted) continue;
+      const positionKey = `${Math.round(r.x)},${Math.round(r.y)}`;
+      if (liveResourcePositions?.has(positionKey)) continue;
       if (!r.id || !resourceSprites.draw(ctx, r.id, r.x, r.y)) {
         const half = r.size / 2;
         ctx.fillStyle = r.color;

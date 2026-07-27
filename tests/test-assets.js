@@ -49,12 +49,12 @@ for (const category of ['letter', 'box', 'parcel', 'delicate']) {
 }
 console.log('  [PASS] sorting: 20 referenced sprites');
 
-if (resourceSprites.getDrawSize('berry_bush') !== 21 ||
-    resourceSprites.getDrawSize('copper_node') !== 21 ||
-    resourceSprites.getDrawSize('wood_oak') !== 32 ||
+if (resourceSprites.getDrawSize('berry_bush') !== 12 ||
+    resourceSprites.getDrawSize('copper_node') !== 12 ||
+    resourceSprites.getDrawSize('wood_oak') !== 24 ||
     resourceSprites.getDrawSize('flax_plant') !== 64) {
   throw new Error('Resource draw-size categories are incorrect');
 }
-console.log('  [PASS] resource draw sizes: compact nodes 1/3, trees 1/2');
+console.log('  [PASS] resource draw sizes: compact nodes 12px, trees 24px');
 
 console.log(`\n  Results: ${checked} assets checked, 0 missing`);

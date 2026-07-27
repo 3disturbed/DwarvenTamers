@@ -102,8 +102,11 @@ class ResourceSprites {
   }
 
   getDrawSize(resourceId) {
-    if (TREE_IDS.has(resourceId)) return 32;
-    if (COMPACT_NODE_IDS.has(resourceId)) return Math.round(64 / 3);
+    // Camera defaults to 2x zoom, so these world sizes appear as 48px and
+    // 24px on screen respectively. Compact nodes stay clearly below player
+    // size while trees retain a readable silhouette.
+    if (TREE_IDS.has(resourceId)) return 24;
+    if (COMPACT_NODE_IDS.has(resourceId)) return 12;
     return 64;
   }
 
@@ -121,8 +124,8 @@ class ResourceSprites {
     // A hand-painted footprint anchors even the smallest forage sprites.
     if (this.ground) {
       ctx.globalAlpha = FORAGE_IDS.has(resourceId) ? 0.58 : 0.78;
-      const groundW = Math.max(24, Math.round(72 * scale));
-      const groundH = Math.max(16, Math.round(52 * scale));
+      const groundW = Math.max(14, Math.round(72 * scale));
+      const groundH = Math.max(9, Math.round(52 * scale));
       ctx.drawImage(
         this.ground,
         Math.round(x - groundW / 2),
@@ -136,7 +139,7 @@ class ResourceSprites {
     const glow = RESOURCE_GLOW[resourceId];
     if (glow) {
       const glowY = y + Math.max(3, 9 * scale);
-      const glowRadius = Math.max(10, 27 * scale);
+      const glowRadius = Math.max(5, 27 * scale);
       const aura = ctx.createRadialGradient(x, glowY, 1, x, glowY, glowRadius);
       aura.addColorStop(0, `${glow}42`);
       aura.addColorStop(0.55, `${glow}18`);

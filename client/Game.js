@@ -2375,7 +2375,7 @@ export default class Game {
 
   renderWorld(r) {
     // Render streamed chunks (terrain + resources)
-    this.worldManager.render(r.ctx, this.camera, r.width, r.height);
+    this.worldManager.render(r.ctx, this.camera, r.width, r.height, this.resources);
   }
 
   renderResources(r) {

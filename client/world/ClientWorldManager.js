@@ -113,13 +113,24 @@ export default class ClientWorldManager {
     chunk.setTile(localX, localY, newTileId);
   }
 
-  render(ctx, camera, viewWidth, viewHeight) {
+  render(ctx, camera, viewWidth, viewHeight, liveResources = null) {
     for (const chunk of this.chunks.values()) {
       chunk.render(ctx, camera.x, camera.y, camera.zoom, viewWidth, viewHeight);
     }
+
+    // Server-streamed resources are rendered later as live entities with
+    // names and health. Suppress their static chunk copies to avoid a doubled
+    // silhouette, glow, and ground decal at the same position.
+    const liveResourcePositions = new Set();
+    if (liveResources) {
+      for (const resource of liveResources.values()) {
+        liveResourcePositions.add(`${Math.round(resource.x)},${Math.round(resource.y)}`);
+      }
+    }
+
     // Render resources on top of terrain
     for (const chunk of this.chunks.values()) {
-      chunk.renderResources(ctx);
+      chunk.renderResources(ctx, liveResourcePositions);
     }
   }
 }
