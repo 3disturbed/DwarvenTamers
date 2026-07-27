@@ -10,7 +10,7 @@ import { TILE } from '../../shared/TileTypes.js';
 const MAX_PIXEL_RATIO = 2;
 const CAMERA_FOV = 58;
 const CAMERA_SIDE_OFFSET = 0;
-const CAMERA_PITCH_DEG = 73;
+const CAMERA_PITCH_DEG = 70;
 const CAMERA_ORBIT_DISTANCE = 420;
 const CAMERA_LOOK_Y = 18;
 const CAMERA_NEAR = 2;
@@ -451,10 +451,8 @@ export default class Billboard3DRenderer {
     mesh.scale.set(size, size, 1);
     mesh.position.set(worldX, (size * 0.46) + liftY, worldY);
 
-    // Cylindrical billboarding: only yaw, so sprites stay upright and stop wobbling.
-    const dx = this.camera.position.x - mesh.position.x;
-    const dz = this.camera.position.z - mesh.position.z;
-    mesh.rotation.set(0, Math.atan2(dx, dz), 0);
+    // Keep sprites fixed to world axes (X/Y upright), no camera-facing yaw.
+    mesh.rotation.set(0, 0, 0);
     mesh.material.opacity = 1;
 
     this._placeShadow(worldX, worldY, size, liftY);
