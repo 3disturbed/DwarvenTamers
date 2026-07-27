@@ -13,16 +13,16 @@ import { initializePwa } from './pwa.js';
 import { initializeOnboarding } from './onboarding.js';
 import { initializeSaveManager } from './save-manager.js';
 
+const BRAND_SPLASH_MS = 5000;
+const GAME_MODE_KEY = `${APP_STORAGE_PREFIX}game-mode`;
+const GAME_MODE_NORMAL = 'normal';
+const GAME_MODE_SURVIVAL = 'survival';
+
 // DwarvenTamers has one local character and loads directly without an account screen.
 initializePwa();
 initializeOnboarding();
 initializeSaveManager();
 startGame();
-
-const BRAND_SPLASH_MS = 5000;
-const GAME_MODE_KEY = `${APP_STORAGE_PREFIX}game-mode`;
-const GAME_MODE_NORMAL = 'normal';
-const GAME_MODE_SURVIVAL = 'survival';
 
 function startGame() {
   const canvas = document.getElementById('game');
