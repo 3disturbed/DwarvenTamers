@@ -18,7 +18,7 @@ initializeOnboarding();
 initializeSaveManager();
 startGame();
 
-const BRAND_SPLASH_MS = 1850;
+const BRAND_SPLASH_MS = 5000;
 
 function startGame() {
   const canvas = document.getElementById('game');
@@ -26,19 +26,37 @@ function startGame() {
   const splashBar = document.getElementById('splash-bar');
   const splashText = document.getElementById('splash-text');
   const splash = document.getElementById('splash');
+  const mainMenu = document.getElementById('main-menu');
+  const playButton = document.getElementById('main-menu-play');
+  const helpButton = document.getElementById('main-menu-help');
+  const saveButton = document.getElementById('main-menu-save');
+  const helpDialog = document.getElementById('help-dialog');
+  const saveDialog = document.getElementById('save-dialog');
   let loaderReady = false;
   let brandFinished = !brandSplash;
   let gameStarted = false;
+  let menuShown = false;
 
-  const maybeStartGame = () => {
-    if (gameStarted || !loaderReady || !brandFinished) return;
+  const launchGame = () => {
+    if (gameStarted) return;
     gameStarted = true;
-    if (splashText) splashText.textContent = 'Starting...';
+    mainMenu?.classList.remove('visible');
+    if (mainMenu) mainMenu.hidden = true;
     const game = new Game(canvas);
     game.start();
+  };
+
+  const maybeShowMainMenu = () => {
+    if (menuShown || !loaderReady || !brandFinished) return;
+    menuShown = true;
+    if (splashText) splashText.textContent = 'Press Play';
     if (splash) {
       splash.classList.add('fade-out');
       setTimeout(() => splash.remove(), 700);
+    }
+    if (mainMenu) {
+      mainMenu.hidden = false;
+      requestAnimationFrame(() => mainMenu.classList.add('visible'));
     }
   };
 
@@ -52,7 +70,7 @@ function startGame() {
       splash?.classList.remove('pre-splash-hidden');
       setTimeout(() => brandSplash.remove(), 750);
       brandFinished = true;
-      maybeStartGame();
+      maybeShowMainMenu();
     }, BRAND_SPLASH_MS);
   }
 
@@ -81,8 +99,12 @@ function startGame() {
     })
   )).then(() => {
     loaderReady = true;
-    maybeStartGame();
+    maybeShowMainMenu();
   });
+
+  playButton?.addEventListener('click', launchGame);
+  helpButton?.addEventListener('click', () => helpDialog?.showModal());
+  saveButton?.addEventListener('click', () => saveDialog?.showModal());
 
   // Fullscreen button for mobile - only show on touch devices when not fullscreen
   const fsBtn = document.getElementById('fullscreen-btn');

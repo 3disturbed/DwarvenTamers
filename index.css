@@ -309,6 +309,76 @@ dialog button:focus-visible {
   letter-spacing: 0.15em;
   text-transform: uppercase;
 }
+#main-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(201, 168, 76, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(10,10,15,0.94), rgba(6,6,10,0.98));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+#main-menu.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.main-menu__panel {
+  width: min(560px, 100%);
+  padding: clamp(28px, 5vw, 42px);
+  border: 1px solid rgba(201, 168, 76, 0.42);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(24,24,36,0.92), rgba(10,10,16,0.96));
+  box-shadow: 0 24px 80px rgba(0,0,0,0.55);
+  text-align: center;
+}
+.main-menu__eyebrow {
+  color: #c9a84c;
+  font: 800 0.74rem/1 system-ui, sans-serif;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+.main-menu__title {
+  margin-top: 10px;
+  color: #f2dfaa;
+  font: 700 clamp(2.4rem, 7vw, 4.2rem)/0.95 Georgia, serif;
+}
+.main-menu__subtitle {
+  margin-top: 14px;
+  color: #aaa8a1;
+  font: 500 0.95rem/1.55 system-ui, sans-serif;
+}
+.main-menu__actions {
+  display: grid;
+  gap: 12px;
+  margin-top: 28px;
+}
+.main-menu__actions button {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1px solid rgba(201, 168, 76, 0.58);
+  border-radius: 10px;
+  background: rgba(201, 168, 76, 0.08);
+  color: #f0d585;
+  font: 800 0.9rem/1 system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+.main-menu__actions button:hover {
+  background: rgba(201, 168, 76, 0.18);
+  transform: translateY(-1px);
+}
+.main-menu__actions button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
 #system-toast {
   position: fixed;
   left: 50%;
