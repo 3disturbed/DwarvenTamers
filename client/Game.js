@@ -296,10 +296,7 @@ export default class Game {
           this.chestPanel.close();
           this.chestOpen = false;
         }
-        if (this.placementMode) {
-          this.network.sendPlaceCancel();
-          this.placementMode = null;
-        }
+        this._cancelPlacementMode();
         this.fishingRodPanel.close();
         this.fishingRodOpen = false;
         this.contextMenu.close();
@@ -533,6 +530,7 @@ export default class Game {
 
     // Dialog callbacks
     this.network.onDialogStart = (data) => {
+      this._cancelPlacementMode();
       this.dialogPanel.position(this.renderer.logicalWidth, this.renderer.logicalHeight);
       this.dialogPanel.open(data);
       this.dialogOpen = true;
@@ -552,6 +550,7 @@ export default class Game {
 
     // Quest callbacks
     this.network.onQuestList = (data) => {
+      this._cancelPlacementMode();
       this.questLog.updateFromQuestList(data);
       this.questPanel.position(this.renderer.logicalWidth, this.renderer.logicalHeight);
       this.questPanel.openNpcQuests(data);
@@ -623,6 +622,7 @@ export default class Game {
 
     // Shop callbacks
     this.network.onShopData = (data) => {
+      this._cancelPlacementMode();
       this.shopPanel.position(this.renderer.logicalWidth, this.renderer.logicalHeight);
       this.shopPanel.open(data);
       this.shopOpen = true;
@@ -640,6 +640,7 @@ export default class Game {
 
     // Chest
     this.network.onChestData = (data) => {
+      this._cancelPlacementMode();
       if (!this.chestOpen) {
         this.chestPanel.position(this.renderer.logicalWidth, this.renderer.logicalHeight);
         this.chestPanel.open(data);
@@ -1454,8 +1455,7 @@ export default class Game {
         this.questPanel.close();
         this.questPanelOpen = false;
       } else if (this.placementMode) {
-        this.network.sendPlaceCancel();
-        this.placementMode = null;
+        this._cancelPlacementMode();
       } else if (this.skillsOpen) {
         this.skillsPanel.close();
         this.skillsOpen = false;
@@ -1476,6 +1476,10 @@ export default class Game {
         this.panelsOpen = false;
         this.characterPanel.close();
       }
+    }
+
+    if (this.placementMode && this._hasPlacementBlockingModalOpen()) {
+      this._cancelPlacementMode();
     }
 
     // Ghost placement mode
@@ -2424,6 +2428,31 @@ export default class Game {
         this.damageNumbers.add(this.localPlayer.x, this.localPlayer.y - 30, 'PVP Draw', false, '#95a5a6');
       }
     }
+  }
+
+  _cancelPlacementMode() {
+    if (!this.placementMode) return false;
+    this.network.sendPlaceCancel();
+    this.placementMode = null;
+    this.ghostValid = false;
+    return true;
+  }
+
+  _hasPlacementBlockingModalOpen() {
+    return this.worldMap.visible
+      || this.chestOpen
+      || this.dialogOpen
+      || this.questPanelOpen
+      || this.shopOpen
+      || this.mailJobOpen
+      || this.animalPenOpen
+      || this.petCodexOpen
+      || this.fishingRodOpen
+      || this.craftingOpen
+      || this.upgradeOpen
+      || this.skillsOpen
+      || this.panelsOpen
+      || this.contextMenu.visible;
   }
 
   renderWorld(r) {
