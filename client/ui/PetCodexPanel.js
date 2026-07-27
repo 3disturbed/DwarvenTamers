@@ -1,4 +1,4 @@
-import { PET_DB, getPetStats, getXpForLevel } from '../../shared/PetTypes.js';
+import { PET_DB, getPetStats, getXpForLevel, getTamerXpForLevel } from '../../shared/PetTypes.js';
 import { SKILL_DB } from '../../shared/SkillTypes.js';
 
 const PANEL_W = 360;
@@ -18,6 +18,8 @@ export default class PetCodexPanel {
     // Data from server
     this.petCodex = [];
     this.petTeam = [null, null, null];
+    this.tamerLevel = 1;
+    this.tamerXp = 0;
 
     // Collection tab state
     this.selectedIndex = -1; // codex index of selected pet
@@ -34,10 +36,12 @@ export default class PetCodexPanel {
     this.teamAssignScroll = 0;
   }
 
-  open(petCodex, petTeam) {
+  open(petCodex, petTeam, tamerLevel = 1, tamerXp = 0) {
     this.visible = true;
     this.petCodex = petCodex || [];
     this.petTeam = petTeam ? [...petTeam] : [null, null, null];
+    this.tamerLevel = tamerLevel;
+    this.tamerXp = tamerXp;
     this.selectedIndex = -1;
     this.scrollOffset = 0;
     this.hoverIndex = -1;
@@ -52,10 +56,12 @@ export default class PetCodexPanel {
     this.renaming = false;
   }
 
-  refresh(petCodex, petTeam) {
+  refresh(petCodex, petTeam, tamerLevel = this.tamerLevel, tamerXp = this.tamerXp) {
     if (!this.visible) return;
     this.petCodex = petCodex || [];
     if (petTeam) this.petTeam = [...petTeam];
+    this.tamerLevel = tamerLevel;
+    this.tamerXp = tamerXp;
     // Validate selection
     if (this.selectedIndex >= this.petCodex.length) this.selectedIndex = -1;
   }
@@ -304,6 +310,14 @@ export default class PetCodexPanel {
     ctx.font = '14px monospace';
     ctx.textAlign = 'right';
     ctx.fillText('[X]', this.x + PANEL_W - 8, tabY + 16);
+
+    const nextTamerXp = getTamerXpForLevel(this.tamerLevel + 1);
+    ctx.fillStyle = '#d2b4de';
+    ctx.font = 'bold 10px monospace';
+    ctx.textAlign = 'center';
+    const healLabel = this.tamerLevel < 10 ? ' · FREE HEALS' : '';
+    const xpLabel = Number.isFinite(nextTamerXp) ? ` · ${this.tamerXp}/${nextTamerXp} XP` : ' · MAX';
+    ctx.fillText(`TAMER Lv.${this.tamerLevel}${xpLabel}${healLabel}`, this.x + PANEL_W / 2, this.y + PANEL_H - 5);
 
     if (this.tab === TAB_COLLECTION) {
       this._renderCollection(ctx);

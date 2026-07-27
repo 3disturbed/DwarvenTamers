@@ -15,6 +15,8 @@ export default class PlayerComponent extends Component {
     this.ownedPlots = [];   // array of land plot IDs owned by this player
     this.petCodex = [];                // array of pet data objects (unlimited)
     this.petTeam = [null, null, null]; // codex indices (int or null)
+    this.tamerLevel = 1;
+    this.tamerXp = 0;
     this.activeBattle = null; // reference to active PetBattle instance
   }
 }

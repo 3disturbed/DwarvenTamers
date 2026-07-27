@@ -4,6 +4,8 @@ export const PET_CAPTURE_HP_THRESHOLD = 0.3; // Must be below 30% HP to capture
 export const PET_PASSIVE_VARIANT_CHANCE = 0.05; // 5% chance for rare passive variant
 export const PET_TEAM_SIZE = 3;
 export const PET_MAX_LEVEL = 20;
+export const TAMER_MAX_LEVEL = 20;
+export const FREE_PET_HEAL_TAMER_LEVEL = 10;
 export const PET_MAX_TIER_UP = 5;
 export const PET_SKILL_UNLOCK_LEVELS = [1, 3, 5, 8, 12];
 export const PET_FLEE_CHANCE = 0.5;
@@ -19,6 +21,45 @@ export const ENCOUNTER_SCALING = {
   3: [2, 3],    // Mountain: 2-3
   4: [3, 3],    // Volcanic: always 3
 };
+
+// Tamer progression is intentionally quicker than pet progression while
+// leaving enough time for each novice-assistance band to be felt.
+export const TAMER_XP_TABLE = [
+  20, 45, 75, 110, 150, 195, 245, 300, 360,
+  430, 510, 600, 700, 810, 930, 1060, 1200, 1350, 1510,
+];
+
+export function getTamerXpForLevel(level) {
+  if (level < 2 || level > TAMER_MAX_LEVEL) return Infinity;
+  return TAMER_XP_TABLE[level - 2];
+}
+
+export function getTamerXpReward(enemyTeam) {
+  if (!Array.isArray(enemyTeam)) return 0;
+  return Math.max(5, enemyTeam.reduce(
+    (total, enemy) => total + Math.max(1, (enemy?.level || 1) * ((PET_DB[enemy?.petId]?.tier || 0) + 1) * 5),
+    0,
+  ));
+}
+
+export function isFreePetHealing(tamerLevel) {
+  return Math.max(1, Number(tamerLevel) || 1) < FREE_PET_HEAL_TAMER_LEVEL;
+}
+
+// Novice protection only changes meadow battles and fades out at level 10.
+export function getTamerEncounterScaling(tier, tamerLevel) {
+  const normalCount = ENCOUNTER_SCALING[tier] || [2, 2];
+  const level = Math.max(1, Number(tamerLevel) || 1);
+  const normalMinLevel = tier * 5 + 1;
+  const normalMaxLevel = Math.min((tier + 1) * 5, PET_MAX_LEVEL);
+
+  if (tier !== 0 || level >= 10) {
+    return { count: normalCount, minLevel: normalMinLevel, maxLevel: normalMaxLevel, assisted: false };
+  }
+  if (level <= 3) return { count: [1, 1], minLevel: 1, maxLevel: 1, assisted: true };
+  if (level <= 6) return { count: [1, 1], minLevel: 1, maxLevel: 2, assisted: true };
+  return { count: [1, 2], minLevel: 2, maxLevel: 4, assisted: true };
+}
 
 // Status effect definitions
 export const STATUS_EFFECTS = {

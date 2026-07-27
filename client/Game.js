@@ -126,6 +126,8 @@ export default class Game {
     this.petCodexOpen = false;
     this.petTeam = [null, null, null];
     this.petCodex = [];
+    this.tamerLevel = 1;
+    this.tamerXp = 0;
 
     // Forward raw key events to pet codex panel for rename mode
     window.addEventListener('keydown', (e) => {
@@ -212,6 +214,8 @@ export default class Game {
       // Restore pet codex and team
       this.petTeam = data.petTeam || [null, null, null];
       this.petCodex = data.petCodex || [];
+      this.tamerLevel = data.tamerLevel || 1;
+      this.tamerXp = data.tamerXp || 0;
       console.log(`[Game] Joined as ${data.name}`);
     };
 
@@ -702,7 +706,9 @@ export default class Game {
     this.network.onPetCodexUpdate = (data) => {
       if (data.petCodex) this.petCodex = data.petCodex;
       if (data.petTeam) this.petTeam = [...data.petTeam];
-      if (this.petCodexOpen) this.petCodexPanel.refresh(this.petCodex, this.petTeam);
+      if (data.tamerLevel) this.tamerLevel = data.tamerLevel;
+      if (data.tamerXp !== undefined) this.tamerXp = data.tamerXp;
+      if (this.petCodexOpen) this.petCodexPanel.refresh(this.petCodex, this.petTeam, this.tamerLevel, this.tamerXp);
       if (this.animalPenOpen) this.animalPenPanel.refresh(this.petCodex);
     };
 
@@ -1341,7 +1347,7 @@ export default class Game {
         this.petCodexOpen = false;
       } else {
         this.petCodexPanel.position(r.logicalWidth, r.logicalHeight);
-        this.petCodexPanel.open(this.petCodex, this.petTeam);
+        this.petCodexPanel.open(this.petCodex, this.petTeam, this.tamerLevel, this.tamerXp);
         this.petCodexOpen = true;
         actions.screenTap = false;
       }

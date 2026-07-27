@@ -1511,6 +1511,21 @@ export default class PetBattlePanel {
         slot++;
       }
 
+      if (this.battleEndData.tamerXpGained) {
+        const a = this._fadeIn(t, 0.6 + slot * stagger);
+        ctx.globalAlpha = a;
+        ctx.fillStyle = '#d2b4de';
+        ctx.font = 'bold 12px monospace';
+        ctx.fillText(`+${this.battleEndData.tamerXpGained} Tamer XP · Tamer Lv.${this.battleEndData.tamerLevel}`, width / 2, infoY);
+        infoY += 18;
+        slot++;
+        if (this.battleEndData.tamerLevelUp) {
+          ctx.fillStyle = '#f1c40f';
+          ctx.fillText('TAMER LEVEL UP!', width / 2, infoY);
+          infoY += 18;
+        }
+      }
+
       // Level Ups
       if (this.battleEndData.levelUps?.length > 0) {
         const a = this._fadeIn(t, 0.6 + slot * stagger);

@@ -1,5 +1,5 @@
 import { MSG } from '../../shared/MessageTypes.js';
-import { PET_DB, getPetStats, getRandomPetSkills, getRandomNewSkill, getXpForLevel, PET_MAX_LEVEL, PET_SKILL_UNLOCK_LEVELS, getBattleXpReward, ENCOUNTER_SCALING } from '../../shared/PetTypes.js';
+import { PET_DB, getPetStats, getRandomPetSkills, getRandomNewSkill, getXpForLevel, PET_MAX_LEVEL, PET_SKILL_UNLOCK_LEVELS, getBattleXpReward, getTamerEncounterScaling, getTamerXpReward, getTamerXpForLevel, TAMER_MAX_LEVEL } from '../../shared/PetTypes.js';
 import PlayerComponent from '../ecs/components/PlayerComponent.js';
 
 let battleIdCounter = 0;
@@ -61,13 +61,13 @@ export default class PetBattleManager {
     const tier = Math.max(enemyTier, playerMaxTier);
 
     // Build enemy team with encounter scaling based on effective tier
-    const scaling = ENCOUNTER_SCALING[tier] || [2, 2];
-    const enemyCount = scaling[0] + Math.floor(Math.random() * (scaling[1] - scaling[0] + 1));
+    const scaling = getTamerEncounterScaling(tier, pc.tamerLevel);
+    const enemyCount = scaling.count[0] + Math.floor(Math.random() * (scaling.count[1] - scaling.count[0] + 1));
     const wildTeam = [];
 
     // Level range based on effective tier
-    const minLevel = tier * 5 + 1;
-    const maxLevel = Math.min((tier + 1) * 5, PET_MAX_LEVEL);
+    const minLevel = scaling.minLevel;
+    const maxLevel = scaling.maxLevel;
 
     // First enemy: the creature attacked, scaled to effective tier
     const firstLevel = minLevel + Math.floor(Math.random() * (maxLevel - minLevel + 1));
@@ -126,6 +126,8 @@ export default class PetBattleManager {
         bonusStats: p.bonusStats || 0,
       })),
       teamB: wildTeam,
+      tamerLevel: pc.tamerLevel,
+      noviceAssisted: scaling.assisted,
     });
 
     return true;
@@ -234,6 +236,8 @@ export default class PetBattleManager {
 
     // Process rewards
     let xpGained = 0;
+    let tamerXpGained = 0;
+    const tamerLevelBefore = pc?.tamerLevel || 1;
     const levelUps = [];
     let newSkills = [];
 
@@ -241,6 +245,17 @@ export default class PetBattleManager {
       // Calculate XP from all wild enemies
       for (const enemy of session.wildTeam) {
         xpGained += getBattleXpReward(enemy.petId, enemy.level);
+      }
+
+      if (pc) {
+        tamerXpGained = getTamerXpReward(session.wildTeam);
+        pc.tamerXp = (pc.tamerXp || 0) + tamerXpGained;
+        while (pc.tamerLevel < TAMER_MAX_LEVEL) {
+          const needed = getTamerXpForLevel(pc.tamerLevel + 1);
+          if (pc.tamerXp < needed) break;
+          pc.tamerXp -= needed;
+          pc.tamerLevel++;
+        }
       }
 
       // Award XP to surviving player pets via codex
@@ -360,10 +375,16 @@ export default class PetBattleManager {
       levelUps,
       newSkills,
       captured,
+      tamerXpGained,
+      tamerLevel: pc?.tamerLevel || 1,
+      tamerLevelUp: (pc?.tamerLevel || 1) > tamerLevelBefore,
     });
 
     if (pc) {
-      playerConn.emit(MSG.PET_CODEX_UPDATE, { petCodex: pc.petCodex, petTeam: pc.petTeam });
+      playerConn.emit(MSG.PET_CODEX_UPDATE, {
+        petCodex: pc.petCodex, petTeam: pc.petTeam,
+        tamerLevel: pc.tamerLevel, tamerXp: pc.tamerXp,
+      });
     }
   }
 

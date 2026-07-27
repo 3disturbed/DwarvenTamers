@@ -901,6 +901,8 @@ export default class GameServer {
       ownedPlots: joinPc ? (joinPc.ownedPlots || []) : [],
       petTeam: joinPc ? (joinPc.petTeam || [null, null, null]) : [null, null, null],
       petCodex: joinPc ? (joinPc.petCodex || []) : [],
+      tamerLevel: joinPc ? joinPc.tamerLevel : 1,
+      tamerXp: joinPc ? joinPc.tamerXp : 0,
     });
     playerConn.emit(MSG.SAVE_STATUS, {
       savedAt: saveData?.savedAt || null,
@@ -1060,6 +1062,8 @@ export default class GameServer {
       ownedPlots: pc ? (pc.ownedPlots || []) : [],
       petTeam: pc ? (pc.petTeam || [null, null, null]) : [null, null, null],
       petCodex: pc ? (pc.petCodex || []) : [],
+      tamerLevel: pc ? pc.tamerLevel : 1,
+      tamerXp: pc ? pc.tamerXp : 0,
     };
 
     const saved = await this.playerRepo.save(playerConn.id, data);
@@ -1151,6 +1155,8 @@ export default class GameServer {
     {
       const pc = entity.getComponent(PlayerComponent);
       if (pc) {
+        pc.tamerLevel = Math.max(1, Math.min(20, Number(saveData.tamerLevel) || 1));
+        pc.tamerXp = Math.max(0, Number(saveData.tamerXp) || 0);
         if (saveData.petCodex) {
           // New format: codex exists
           pc.petCodex = saveData.petCodex;

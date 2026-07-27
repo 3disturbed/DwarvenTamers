@@ -1,5 +1,5 @@
 import { MSG } from '../../../shared/MessageTypes.js';
-import { getPetStats } from '../../../shared/PetTypes.js';
+import { getPetStats, isFreePetHealing } from '../../../shared/PetTypes.js';
 import PositionComponent from '../../ecs/components/PositionComponent.js';
 import HealthComponent from '../../ecs/components/HealthComponent.js';
 import NPCComponent from '../../ecs/components/NPCComponent.js';
@@ -217,8 +217,9 @@ export default class DialogHandler {
     if (!inv || !pc) return;
 
     const HEAL_COST = 100;
+    const freeHeal = isFreePetHealing(pc.tamerLevel);
     const gold = inv.countItem('gold');
-    if (gold < HEAL_COST) {
+    if (!freeHeal && gold < HEAL_COST) {
       player.emit(MSG.CHAT_RECEIVE, { message: `Not enough gold. Need ${HEAL_COST}g (you have ${gold}g).`, sender: 'Astrid' });
       return;
     }
@@ -242,10 +243,20 @@ export default class DialogHandler {
       return;
     }
 
-    inv.removeItem('gold', HEAL_COST);
-    player.emit(MSG.INVENTORY_UPDATE, { slots: inv.serialize().slots });
-    player.emit(MSG.PET_CODEX_UPDATE, { petCodex: pc.petCodex, petTeam: pc.petTeam });
-    player.emit(MSG.CHAT_RECEIVE, { message: `All pets healed and revived! (-${HEAL_COST}g)`, sender: 'Astrid' });
+    if (!freeHeal) {
+      inv.removeItem('gold', HEAL_COST);
+      player.emit(MSG.INVENTORY_UPDATE, { slots: inv.serialize().slots });
+    }
+    player.emit(MSG.PET_CODEX_UPDATE, {
+      petCodex: pc.petCodex, petTeam: pc.petTeam,
+      tamerLevel: pc.tamerLevel, tamerXp: pc.tamerXp,
+    });
+    player.emit(MSG.CHAT_RECEIVE, {
+      message: freeHeal
+        ? 'All pets healed and revived — free for Tamers under level 10!'
+        : `All pets healed and revived! (-${HEAL_COST}g)`,
+      sender: 'Astrid',
+    });
   }
 
   _sendShopData(player, npcId) {
