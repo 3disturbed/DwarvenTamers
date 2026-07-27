@@ -11,6 +11,7 @@ import { PET_DB, PET_PASSIVE_VARIANT_CHANCE } from '../../../shared/PetTypes.js'
 const SPAWN_CHECK_INTERVAL = 5; // seconds between spawn checks
 const MAX_ENEMIES_PER_CHUNK = 3;
 const MAX_HORSES_PER_CHUNK = 2;
+const SPAWN_ACTIVE_RADIUS = VIEW_DISTANCE + 4;
 
 export default class SpawnSystem extends System {
   constructor() {
@@ -37,8 +38,8 @@ export default class SpawnSystem extends System {
       const cx = Math.floor(pos.x / CHUNK_PIXEL_SIZE);
       const cy = Math.floor(pos.y / CHUNK_PIXEL_SIZE);
 
-      for (let dy = -VIEW_DISTANCE; dy <= VIEW_DISTANCE; dy++) {
-        for (let dx = -VIEW_DISTANCE; dx <= VIEW_DISTANCE; dx++) {
+      for (let dy = -SPAWN_ACTIVE_RADIUS; dy <= SPAWN_ACTIVE_RADIUS; dy++) {
+        for (let dx = -SPAWN_ACTIVE_RADIUS; dx <= SPAWN_ACTIVE_RADIUS; dx++) {
           activeChunks.add(`${cx + dx},${cy + dy}`);
         }
       }
