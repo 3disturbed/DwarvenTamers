@@ -273,6 +273,15 @@ export default class TouchInput {
     return delta;
   }
 
+  cancelMovement() {
+    for (const stick of [this.leftStick, this.rightStick]) {
+      stick.active = false;
+      stick.touchId = null;
+      stick.x = 0;
+      stick.y = 0;
+    }
+  }
+
   update() {
     // Clear justPressed flags
     for (const state of this.buttonStates.values()) {

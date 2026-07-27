@@ -899,6 +899,16 @@ export default class Game {
       actions.reset();
     }
 
+    // The map is a modal surface. Suppress touch-stick axes before the movement
+    // update so map gestures can never move the character underneath it.
+    if (this.worldMap.visible) {
+      actions.moveX = 0;
+      actions.moveY = 0;
+      actions.aimX = 0;
+      actions.aimY = 0;
+      this.input.touch.cancelMovement();
+    }
+
     // Suppress game actions while pet codex rename is active (keys go to text input)
     if (this.petCodexOpen && this.petCodexPanel.renaming) {
       actions.moveX = 0;
@@ -1331,11 +1341,19 @@ export default class Game {
     // Toggle world map with M key
     if (actions.map && !this.placementMode) {
       this.worldMap.toggle(this.localPlayer);
+      this.input.touch.cancelMovement();
       actions.screenTap = false;
     }
 
     // World map drag panning + station click
     if (this.worldMap.visible) {
+      // Map gestures must never leak into character movement.
+      actions.moveX = 0;
+      actions.moveY = 0;
+      actions.aimX = 0;
+      actions.aimY = 0;
+      this.input.touch.cancelMovement();
+
       if (actions.action) {
         this.worldMap.handleMouseDown(uiMX, uiMY);
       }
@@ -1352,6 +1370,23 @@ export default class Game {
           }
         }
         this.worldMap.handleMouseUp();
+      }
+
+      if (actions.screenTap) {
+        const result = this.worldMap.handleClick(
+          uiMX,
+          uiMY,
+          r.logicalWidth,
+          r.logicalHeight,
+          this.localPlayer,
+          this.allStations,
+        );
+        if (result?.action === 'travel') {
+          this.network.sendStationTravel(result.x, result.y);
+          this.worldMap.close();
+        } else if (result?.action === 'close') {
+          this.worldMap.close();
+        }
       }
     }
 
@@ -1372,6 +1407,7 @@ export default class Game {
     if (actions.cancel) {
       if (this.worldMap.visible) {
         this.worldMap.close();
+        this.input.touch.cancelMovement();
       } else if (this.chestOpen) {
         this.network.sendChestClose(this.chestPanel.entityId);
         this.chestPanel.close();
@@ -1475,13 +1511,20 @@ export default class Game {
 
     // Pinch-to-zoom: route to camera or convert to scroll for UI panels
     if (actions.pinchActive) {
-      if (actions.pinchJustStarted) {
+      if (this.worldMap.visible) {
+        if (actions.pinchJustStarted) {
+          this.worldMap.handlePinchStart(actions.pinchStartDist);
+        }
+        this.worldMap.handlePinchMove(actions.pinchCurrentDist);
+      } else if (actions.pinchJustStarted) {
         this.camera.onPinchStart(actions.pinchStartDist);
       }
       const anyPanel = this.chestOpen || this.animalPenOpen || this.petCodexOpen ||
         this.shopOpen || this.worldMap.visible || this.skillsOpen ||
         this.upgradeOpen || this.craftingOpen || this.panelsOpen;
-      if (!anyPanel) {
+      if (this.worldMap.visible) {
+        // World map pinch is handled continuously above.
+      } else if (!anyPanel) {
         this.camera.onPinchMove(actions.pinchCurrentDist);
       } else {
         // Convert pinch to discrete scroll steps for panel scrolling

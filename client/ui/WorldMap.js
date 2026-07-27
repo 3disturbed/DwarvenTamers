@@ -49,6 +49,8 @@ export default class WorldMap {
     // Station selection
     this.selectedStation = null; // { id, x, y, name, stationId }
     this.travelBtnRect = null;  // { x, y, w, h } for hit testing
+    this.pinchStartDistance = 0;
+    this.pinchStartZoom = DEFAULT_ZOOM;
   }
 
   open(localPlayer) {
@@ -74,8 +76,22 @@ export default class WorldMap {
 
   handleScroll(delta) {
     if (!this.visible) return false;
-    this.zoom += delta > 0 ? -1 : 1;
+    this.zoom += delta > 0 ? 1 : -1;
     this.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, this.zoom));
+    return true;
+  }
+
+  handlePinchStart(distance) {
+    if (!this.visible) return false;
+    this.pinchStartDistance = Math.max(1, distance);
+    this.pinchStartZoom = this.zoom;
+    return true;
+  }
+
+  handlePinchMove(distance) {
+    if (!this.visible || this.pinchStartDistance <= 0) return false;
+    const scale = distance / this.pinchStartDistance;
+    this.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, this.pinchStartZoom * scale));
     return true;
   }
 
@@ -106,7 +122,15 @@ export default class WorldMap {
 
   // Returns 'travel' if travel button clicked, null otherwise
   handleClick(mx, my, screenW, screenH, localPlayer, stations) {
-    if (!this.visible || !localPlayer) return null;
+    if (!this.visible) return null;
+
+    const closeButton = this._getCloseButtonRect(screenW);
+    if (mx >= closeButton.x && mx <= closeButton.x + closeButton.w &&
+        my >= closeButton.y && my <= closeButton.y + closeButton.h) {
+      return { action: 'close' };
+    }
+
+    if (!localPlayer) return null;
 
     // Check travel button first
     if (this.selectedStation && this.travelBtnRect) {
@@ -152,6 +176,10 @@ export default class WorldMap {
     this.selectedStation = null;
     this.travelBtnRect = null;
     return null;
+  }
+
+  _getCloseButtonRect(screenW) {
+    return { x: screenW - 48, y: 10, w: 38, h: 38 };
   }
 
   _updateChunkMeta(worldManager) {
@@ -327,10 +355,22 @@ export default class WorldMap {
     ctx.textAlign = 'center';
     ctx.fillText('WORLD MAP', centerX, 30);
 
+    // Always-visible touch-safe close button.
+    const closeButton = this._getCloseButtonRect(screenW);
+    ctx.fillStyle = 'rgba(25, 25, 38, 0.94)';
+    ctx.fillRect(closeButton.x, closeButton.y, closeButton.w, closeButton.h);
+    ctx.strokeStyle = '#f1c40f';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(closeButton.x, closeButton.y, closeButton.w, closeButton.h);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 18px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('\u00d7', closeButton.x + closeButton.w / 2, closeButton.y + 25);
+
     // Controls hint
     ctx.fillStyle = 'rgba(255,255,255,0.4)';
     ctx.font = '10px monospace';
-    ctx.fillText('Scroll to zoom  |  Drag to pan  |  Click station to travel  |  M / Esc to close', centerX, screenH - 16);
+    ctx.fillText('Pinch / scroll to zoom  |  Tap station to travel  |  \u00d7 to close', centerX, screenH - 16);
 
     // Legend
     ctx.textAlign = 'left';
