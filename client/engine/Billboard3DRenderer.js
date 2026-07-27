@@ -408,6 +408,7 @@ export default class Billboard3DRenderer {
       const texture = this._getTexture(sprite, `resource:${res.resourceId}`);
       this._placeBillboard(texture, res.x, worldY, drawSize, 0, {
         shadowTexture: this.resourceShadowTexture,
+        shadowWorldYOffset: drawSize * 0.5,
         shadowY: 0.1,
         shadowOpacity: 0.72,
         shadowScaleX: 1.06,
@@ -503,7 +504,7 @@ export default class Billboard3DRenderer {
   _placeShadow(worldX, worldY, size, liftY = 0, options = null) {
     const shadow = this._acquireShadowMesh(options?.shadowTexture || null);
     shadow.visible = true;
-    shadow.position.set(worldX, options?.shadowY ?? 0.06, worldY);
+    shadow.position.set(worldX, options?.shadowY ?? 0.06, worldY + (options?.shadowWorldYOffset ?? 0));
     shadow.rotation.set(-Math.PI / 2, 0, 0);
     const scale = size * (0.8 + Math.max(0, liftY) * 0.01);
     const sx = options?.shadowScaleX ?? 1;
