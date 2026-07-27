@@ -1,11 +1,15 @@
-import { readFile } from 'fs/promises';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import EntityFactory from '../ecs/EntityFactory.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const ROOT = join(__dirname, '..', '..');
+async function readJson(name) {
+  const url = new URL(`../../data/town/${name}`, import.meta.url);
+  if (typeof window !== 'undefined') {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Could not load ${name}: ${response.status}`);
+    return response.json();
+  }
+  const { readFile } = await import('node:fs/promises');
+  return JSON.parse(await readFile(url, 'utf-8'));
+}
 
 export default class TownManager {
   constructor() {
@@ -16,11 +20,9 @@ export default class TownManager {
   }
 
   async init() {
-    const townDir = join(ROOT, 'data', 'town');
-
     // Load NPCs
     try {
-      const npcData = JSON.parse(await readFile(join(townDir, 'npcs.json'), 'utf-8'));
+      const npcData = await readJson('npcs.json');
       for (const npc of npcData.npcs) {
         this.npcs.set(npc.id, npc);
       }
@@ -30,7 +32,7 @@ export default class TownManager {
 
     // Load dialogs
     try {
-      const dialogData = JSON.parse(await readFile(join(townDir, 'dialogs.json'), 'utf-8'));
+      const dialogData = await readJson('dialogs.json');
       for (const [id, dialog] of Object.entries(dialogData.dialogs)) {
         this.dialogs.set(id, dialog);
       }
@@ -40,7 +42,7 @@ export default class TownManager {
 
     // Load quests
     try {
-      const questData = JSON.parse(await readFile(join(townDir, 'quests.json'), 'utf-8'));
+      const questData = await readJson('quests.json');
       for (const quest of questData.quests) {
         this.quests.set(quest.id, quest);
       }
@@ -50,7 +52,7 @@ export default class TownManager {
 
     // Load shops
     try {
-      const shopData = JSON.parse(await readFile(join(townDir, 'shops.json'), 'utf-8'));
+      const shopData = await readJson('shops.json');
       for (const [id, shop] of Object.entries(shopData.shops)) {
         this.shops.set(id, shop);
       }

@@ -108,7 +108,7 @@ export default class SortingPanel {
           remaining--;
           if (remaining <= 0) this.spritesLoaded = true;
         };
-        img.src = `/tileArt/sorting/${cat}_${i}.png`;
+        img.src = new URL(`../../tileArt/sorting/${cat}_${i}.png`, import.meta.url).href;
         this.sprites[cat].push(img);
       }
     }

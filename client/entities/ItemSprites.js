@@ -26,7 +26,7 @@ class ItemSprites {
           count++;
           if (count >= total) { this.loaded = true; resolve(); }
         };
-        img.src = `/tileArt/items/${id}.png`;
+        img.src = new URL(`../../tileArt/items/${id}.png`, import.meta.url).href;
       }
     });
   }

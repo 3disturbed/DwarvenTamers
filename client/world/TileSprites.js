@@ -69,7 +69,7 @@ class TileSprites {
             resolve();
           }
         };
-        img.src = `/tileArt/${name}.png`;
+        img.src = new URL(`../../tileArt/${name}.png`, import.meta.url).href;
       }
     });
   }

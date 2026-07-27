@@ -28,7 +28,7 @@ class UISprites {
           count++;
           if (count >= total) { this.loaded = true; resolve(); }
         };
-        img.src = `/tileArt/ui/${id}.png`;
+        img.src = new URL(`../../tileArt/ui/${id}.png`, import.meta.url).href;
       }
     });
   }

@@ -1,15 +1,11 @@
-import { readFile, writeFile, mkdir } from 'fs/promises';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import { MSG } from '../../../shared/MessageTypes.js';
 import { LAND_PLOTS } from '../../../shared/LandPlotTypes.js';
 import HealthComponent from '../../ecs/components/HealthComponent.js';
 import PlayerComponent from '../../ecs/components/PlayerComponent.js';
 import InventoryComponent from '../../ecs/components/InventoryComponent.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const REGISTRY_PATH = join(__dirname, '..', '..', '..', 'saves', 'land_registry.json');
+const REGISTRY_PATH = new URL('../../../saves/land_registry.json', import.meta.url);
+const STORAGE_KEY = 'soloheim:land-registry';
 
 export default class LandPlotHandler {
   constructor(gameServer) {
@@ -19,8 +15,14 @@ export default class LandPlotHandler {
 
   async init() {
     try {
-      const data = await readFile(REGISTRY_PATH, 'utf-8');
-      this.registry = JSON.parse(data);
+      if (typeof window !== 'undefined') {
+        const data = localStorage.getItem(STORAGE_KEY);
+        if (!data) throw new Error('No registry');
+        this.registry = JSON.parse(data);
+      } else {
+        const { readFile } = await import('node:fs/promises');
+        this.registry = JSON.parse(await readFile(REGISTRY_PATH, 'utf-8'));
+      }
     } catch {
       // Initialize empty registry
       this.registry = {};
@@ -99,8 +101,12 @@ export default class LandPlotHandler {
 
   async saveRegistry() {
     try {
-      // Ensure saves directory exists
-      const savesDir = join(__dirname, '..', '..', '..', 'saves');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.registry));
+        return;
+      }
+      const { mkdir, writeFile } = await import('node:fs/promises');
+      const savesDir = new URL('../../../saves/', import.meta.url);
       await mkdir(savesDir, { recursive: true });
       await writeFile(REGISTRY_PATH, JSON.stringify(this.registry, null, 2), 'utf-8');
     } catch (err) {

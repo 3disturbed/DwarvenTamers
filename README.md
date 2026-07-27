@@ -4,9 +4,12 @@ SoloHiem is a single-player conversion of
 [DarkHiem](https://github.com/3disturbed/DarkHiem).
 
 The game loads directly at `/` with no registration, login, character picker,
-or session API. A fixed local player identity is used for the save in
-`saves/players/solo-player.json`. Opening a second game tab replaces the first
-connection, so only one player exists at a time.
+session API, or multiplayer server. The original authoritative simulation now
+runs in the browser through an in-process transport. Player, world, and land
+data are saved in browser storage under a fixed `solo-player` identity.
+
+The repository is directly compatible with GitHub Pages, including project
+paths such as `/SoloHiem/`.
 
 ## Run
 
@@ -23,6 +26,7 @@ Open `http://localhost:3000` when using:
 PORT=3000 npm start
 ```
 
-The static client assets are served by the small Node host. The existing
-authoritative game simulation remains local to that process, preserving world
-generation, combat, crafting, NPCs, quests, and save persistence.
+The Node host is optional and remains useful for local development. GitHub
+Pages can serve `index.html` directly; no WebSocket or server process is
+required. World generation, combat, crafting, NPCs, quests, and persistence all
+run locally in the browser.

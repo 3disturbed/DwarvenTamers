@@ -40,7 +40,7 @@ class ResourceSprites {
           count++;
           if (count >= total) { this.loaded = true; resolve(); }
         };
-        img.src = `/tileArt/resources/${id}.png`;
+        img.src = new URL(`../../tileArt/resources/${id}.png`, import.meta.url).href;
       }
     });
   }

@@ -25,11 +25,11 @@ app.use('/data', express.static(join(ROOT, 'data')));
 app.use('/tileArt', express.static(join(ROOT, 'tileArt')));
 
 app.get('/', (req, res) => {
-  res.sendFile(join(ROOT, 'client', 'index.html'));
+  res.sendFile(join(ROOT, 'index.html'));
 });
 
 app.get('/game', (req, res) => {
-  res.sendFile(join(ROOT, 'client', 'index.html'));
+  res.sendFile(join(ROOT, 'index.html'));
 });
 
 // Initialize game

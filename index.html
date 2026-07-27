@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
   <title>SoloHiem</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "simplex-noise": "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.3/+esm"
+      }
+    }
+  </script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0f; }
@@ -82,7 +89,7 @@
 </head>
 <body>
   <div id="splash">
-    <img src="/client/NordFolkLogo.png" alt="SoloHiem">
+    <img src="./client/NordFolkLogo.png" alt="SoloHiem">
     <div class="loading-bar-track">
       <div class="loading-bar-fill" id="splash-bar"></div>
     </div>
@@ -90,7 +97,6 @@
   </div>
   <canvas id="game"></canvas>
   <button id="fullscreen-btn" aria-label="Fullscreen">&#x26F6;</button>
-  <script src="/socket.io/socket.io.js"></script>
-  <script type="module" src="/client/main.js"></script>
+  <script type="module" src="./client/main.js"></script>
 </body>
 </html>

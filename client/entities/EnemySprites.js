@@ -55,7 +55,7 @@ class EnemySprites {
           count++;
           if (count >= total) { this.loaded = true; resolve(); }
         };
-        img.src = `/tileArt/enemies/${id}.png`;
+        img.src = new URL(`../../tileArt/enemies/${id}.png`, import.meta.url).href;
       }
     });
   }

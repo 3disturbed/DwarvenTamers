@@ -1,10 +1,4 @@
-import { readFile, writeFile, access, mkdir } from 'fs/promises';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const SAVE_DIR = join(__dirname, '..', '..', 'saves', 'players');
+const SAVE_DIR = new URL('../../saves/players/', import.meta.url);
 
 export default class PlayerRepository {
   constructor() {
@@ -13,7 +7,10 @@ export default class PlayerRepository {
 
   async init() {
     try {
-      await mkdir(SAVE_DIR, { recursive: true });
+      if (typeof window === 'undefined') {
+        const { mkdir } = await import('node:fs/promises');
+        await mkdir(SAVE_DIR, { recursive: true });
+      }
       this.ready = true;
     } catch (err) {
       console.error('[PlayerRepo] Failed to create save directory:', err.message);
@@ -23,11 +20,19 @@ export default class PlayerRepository {
   getPath(playerId) {
     // Sanitize: only allow alphanumeric + hyphens
     const safe = playerId.replace(/[^a-zA-Z0-9-]/g, '');
-    return join(SAVE_DIR, `${safe}.json`);
+    return new URL(`${safe}.json`, SAVE_DIR);
+  }
+
+  getStorageKey(playerId) {
+    return `soloheim:player:${playerId.replace(/[^a-zA-Z0-9-]/g, '')}`;
   }
 
   async exists(playerId) {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(this.getStorageKey(playerId)) !== null;
+    }
     try {
+      const { access } = await import('node:fs/promises');
       await access(this.getPath(playerId));
       return true;
     } catch {
@@ -37,6 +42,11 @@ export default class PlayerRepository {
 
   async load(playerId) {
     try {
+      if (typeof window !== 'undefined') {
+        const data = localStorage.getItem(this.getStorageKey(playerId));
+        return data ? JSON.parse(data) : null;
+      }
+      const { readFile } = await import('node:fs/promises');
       const data = await readFile(this.getPath(playerId), 'utf-8');
       return JSON.parse(data);
     } catch {
@@ -46,6 +56,11 @@ export default class PlayerRepository {
 
   async save(playerId, data) {
     try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(this.getStorageKey(playerId), JSON.stringify(data));
+        return true;
+      }
+      const { writeFile } = await import('node:fs/promises');
       await writeFile(this.getPath(playerId), JSON.stringify(data, null, 2), 'utf-8');
       return true;
     } catch (err) {

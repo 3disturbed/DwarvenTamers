@@ -1,14 +1,16 @@
-import { readFile } from 'fs/promises';
-import { join } from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 import ChunkManager from './ChunkManager.js';
 import ChunkStore from './ChunkStore.js';
 import WorldGenerator from './generation/WorldGenerator.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const ROOT = join(__dirname, '..', '..');
+async function readJson(url) {
+  if (typeof window !== 'undefined') {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Could not load ${url}: ${response.status}`);
+    return response.json();
+  }
+  const { readFile } = await import('node:fs/promises');
+  return JSON.parse(await readFile(url, 'utf-8'));
+}
 
 export default class WorldManager {
   constructor() {
@@ -22,17 +24,17 @@ export default class WorldManager {
 
   async init() {
     // Load biome index
-    const indexRaw = await readFile(join(ROOT, 'data', 'biomes', 'biomeIndex.json'), 'utf-8');
-    this.biomeIndex = JSON.parse(indexRaw);
+    const dataRoot = new URL('../../data/biomes/', import.meta.url);
+    this.biomeIndex = await readJson(new URL('biomeIndex.json', dataRoot));
 
     // Load all biome data
     for (const biome of this.biomeIndex.biomes) {
-      const dir = join(ROOT, 'data', 'biomes', biome.id);
+      const dir = new URL(`${biome.id}/`, dataRoot);
       const [biomeJson, tilesJson, resourcesJson, enemiesJson] = await Promise.all([
-        readFile(join(dir, 'biome.json'), 'utf-8').then(JSON.parse),
-        readFile(join(dir, 'tiles.json'), 'utf-8').then(JSON.parse),
-        readFile(join(dir, 'resources.json'), 'utf-8').then(JSON.parse),
-        readFile(join(dir, 'enemies.json'), 'utf-8').then(JSON.parse),
+        readJson(new URL('biome.json', dir)),
+        readJson(new URL('tiles.json', dir)),
+        readJson(new URL('resources.json', dir)),
+        readJson(new URL('enemies.json', dir)),
       ]);
 
       this.biomeDataMap.set(biome.id, {
@@ -47,7 +49,7 @@ export default class WorldManager {
     this.generator = new WorldGenerator(this.seed, this.biomeIndex, this.biomeDataMap);
 
     // Initialize chunk store and manager
-    const store = new ChunkStore(join(ROOT, 'saves', 'chunks'));
+    const store = new ChunkStore(new URL('../../saves/chunks/', import.meta.url));
     await store.init();
     this.chunkManager = new ChunkManager(this.generator, store);
 

@@ -22,7 +22,7 @@ class PlayerSprites {
         this.loaded = true;
         resolve();
       };
-      img.src = '/tileArt/player.png';
+      img.src = new URL('../../tileArt/player.png', import.meta.url).href;
     });
   }
 

@@ -26,7 +26,7 @@ class StationSprites {
           count++;
           if (count >= total) { this.loaded = true; resolve(); }
         };
-        img.src = `/tileArt/stations/${def.sprite}.png`;
+        img.src = new URL(`../../tileArt/stations/${def.sprite}.png`, import.meta.url).href;
       }
     });
   }

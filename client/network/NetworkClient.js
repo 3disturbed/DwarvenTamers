@@ -1,4 +1,5 @@
 import { MSG } from '../../shared/MessageTypes.js';
+import { createLocalSocket } from './LocalSocket.js';
 
 export default class NetworkClient {
   constructor() {
@@ -101,7 +102,7 @@ export default class NetworkClient {
   }
 
   connect() {
-    this.socket = io({ transports: ['websocket'] });
+    this.socket = createLocalSocket();
 
     this.socket.on('connect', () => {
       this.connected = true;

@@ -26,7 +26,7 @@ class SkillSprites {
           count++;
           if (count >= total) { this.loaded = true; resolve(); }
         };
-        img.src = `/tileArt/skills/${id}.png`;
+        img.src = new URL(`../../tileArt/skills/${id}.png`, import.meta.url).href;
       }
     });
   }

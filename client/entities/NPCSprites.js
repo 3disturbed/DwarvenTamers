@@ -24,7 +24,7 @@ class NPCSprites {
           count++;
           if (count >= total) { this.loaded = true; resolve(); }
         };
-        img.src = `/tileArt/npcs/${npcType}.png`;
+        img.src = new URL(`../../tileArt/npcs/${npcType}.png`, import.meta.url).href;
       }
     });
   }
