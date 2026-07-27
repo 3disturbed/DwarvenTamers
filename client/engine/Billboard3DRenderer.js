@@ -11,6 +11,8 @@ const CAMERA_SIDE_OFFSET = 0;
 const CAMERA_FORWARD_OFFSET = 1.32;
 const CAMERA_HEIGHT = 0.56;
 const CAMERA_LOOK_Y = 18;
+const CAMERA_NEAR = 2;
+const CAMERA_FAR_BASE = 5200;
 const CAMERA_FOLLOW_DAMPING = 0.12;
 const CAMERA_POSITION_DAMPING = 0.1;
 const DAY_CYCLE_MS = 120000;
@@ -40,7 +42,7 @@ export default class Billboard3DRenderer {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(CAMERA_FOV, 1, 0.1, 5000);
+    this.camera = new THREE.PerspectiveCamera(CAMERA_FOV, 1, CAMERA_NEAR, CAMERA_FAR_BASE);
 
     this.ambient = new THREE.AmbientLight(0x9eb4cf, 0.64);
     this.sun = new THREE.DirectionalLight(0xfff1db, 0.9);
@@ -138,6 +140,11 @@ export default class Billboard3DRenderer {
 
     this.camera.position.copy(this.smoothedCameraPos);
     this.camera.lookAt(this.smoothedFocus.x, CAMERA_LOOK_Y, this.smoothedFocus.z);
+
+    // Keep clipping stable across zoom: tighter at close zoom, broader when zoomed out.
+    this.camera.near = CAMERA_NEAR;
+    this.camera.far = CAMERA_FAR_BASE + (1 / zoom) * 2600;
+    this.camera.updateProjectionMatrix();
 
     this.sun.position.set(
       this.camera.position.x + 160,
