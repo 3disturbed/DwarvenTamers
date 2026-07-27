@@ -10,7 +10,7 @@ import { TILE } from '../../shared/TileTypes.js';
 const MAX_PIXEL_RATIO = 2;
 const CAMERA_FOV = 58;
 const CAMERA_SIDE_OFFSET = 0;
-const CAMERA_PITCH_DEG = 80;
+const CAMERA_PITCH_DEG = 73;
 const CAMERA_ORBIT_DISTANCE = 420;
 const CAMERA_LOOK_Y = 18;
 const CAMERA_NEAR = 2;
