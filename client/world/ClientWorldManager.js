@@ -53,7 +53,7 @@ export default class ClientWorldManager {
     if (key === this.lastPlayerChunk) return;
     this.lastPlayerChunk = key;
 
-    const requestRadius = VIEW_DISTANCE + 2;
+    const requestRadius = VIEW_DISTANCE + 3;
     for (let dy = -requestRadius; dy <= requestRadius; dy++) {
       for (let dx = -requestRadius; dx <= requestRadius; dx++) {
         const cx = chunkX + dx;
@@ -72,7 +72,7 @@ export default class ClientWorldManager {
   }
 
   pruneDistant(centerCX, centerCY) {
-    const maxDist = VIEW_DISTANCE + 4;
+    const maxDist = VIEW_DISTANCE + 5;
     const toRemove = [];
 
     for (const [key, chunk] of this.chunks) {

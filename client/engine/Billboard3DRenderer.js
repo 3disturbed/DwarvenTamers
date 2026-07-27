@@ -4,20 +4,29 @@ import npcSprites from '../entities/NPCSprites.js';
 import playerSprites from '../entities/PlayerSprites.js';
 import resourceSprites from '../entities/ResourceSprites.js';
 import stationSprites from '../entities/StationSprites.js';
+import { CHUNK_SIZE, TILE_SIZE } from '../../shared/Constants.js';
+import { TILE } from '../../shared/TileTypes.js';
 
 const MAX_PIXEL_RATIO = 2;
 const CAMERA_FOV = 58;
 const CAMERA_SIDE_OFFSET = 0;
-const CAMERA_FORWARD_OFFSET = 1.46;
-const CAMERA_HEIGHT = 0.42;
+const CAMERA_FORWARD_OFFSET = 1.32;
+const CAMERA_HEIGHT = 0.56;
 const CAMERA_LOOK_Y = 18;
 const CAMERA_NEAR = 2;
 const CAMERA_FAR_BASE = 5200;
-const CAMERA_BASE_DISTANCE = 330;
-const GROUND_OVERSCAN = 1.9;
 const CAMERA_FOLLOW_DAMPING = 0.12;
 const CAMERA_POSITION_DAMPING = 0.1;
 const DAY_CYCLE_MS = 120000;
+const GROUND_OVERSCAN = 1.8;
+const MAX_WALL_INSTANCES = 12000;
+const WALL_BASE_HEIGHT = TILE_SIZE * 1.5;
+
+const WALL_TILE_IDS = new Set([
+  TILE.WALL,
+  TILE.CAVE_WALL,
+  TILE.CLIFF,
+]);
 
 export default class Billboard3DRenderer {
   constructor(hostCanvas) {
@@ -71,6 +80,21 @@ export default class Billboard3DRenderer {
 
     this.shadowTexture = this._createShadowTexture();
 
+    this.wallGeometry = new THREE.BoxGeometry(TILE_SIZE, 1, TILE_SIZE);
+    this.wallMaterial = new THREE.MeshStandardMaterial({
+      color: 0x6a7380,
+      roughness: 0.95,
+      metalness: 0.02,
+    });
+    this.wallMesh = new THREE.InstancedMesh(this.wallGeometry, this.wallMaterial, MAX_WALL_INSTANCES);
+    this.wallMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.wallMesh.count = 0;
+    this.scene.add(this.wallMesh);
+    this._wallMatrix = new THREE.Matrix4();
+    this._wallPos = new THREE.Vector3();
+    this._wallQuat = new THREE.Quaternion();
+    this._wallScale = new THREE.Vector3(1, 1, 1);
+
     this.smoothedFocus = new THREE.Vector3();
     this.smoothedCameraPos = new THREE.Vector3();
     this.cameraStateInitialized = false;
@@ -91,11 +115,6 @@ export default class Billboard3DRenderer {
     } catch {
       return false;
     }
-  }
-
-  _toSceneZ(worldY) {
-    // Keep map convention north-up: decreasing worldY should appear toward top.
-    return -worldY;
   }
 
   _resizeFromHost() {
@@ -126,13 +145,13 @@ export default class Billboard3DRenderer {
 
     const zoom = Math.max(0.4, gameCamera.zoom || 1);
     const targetX = gameCamera.x;
-    const targetZ = this._toSceneZ(gameCamera.y);
-    const distance = CAMERA_BASE_DISTANCE / zoom;
+    const targetZ = gameCamera.y;
+    const distance = 420 / zoom;
 
     const desiredPos = new THREE.Vector3(
       targetX - distance * CAMERA_SIDE_OFFSET,
       distance * CAMERA_HEIGHT,
-      targetZ - distance * CAMERA_FORWARD_OFFSET,
+      targetZ + distance * CAMERA_FORWARD_OFFSET,
     );
     const desiredFocus = new THREE.Vector3(targetX, 0, targetZ);
 
@@ -199,11 +218,13 @@ export default class Billboard3DRenderer {
     const worldW = w / Math.max(0.001, gameCamera.zoom);
     const worldH = h / Math.max(0.001, gameCamera.zoom);
     this.groundMesh.scale.set(worldW, worldH, 1);
-    this.groundMesh.position.set(gameCamera.x, 0, this._toSceneZ(gameCamera.y));
+    this.groundMesh.position.set(gameCamera.x, 0, gameCamera.y);
   }
 
   render(data) {
     if (!this.enabled) return;
+
+    this._renderWalls(data.chunks);
 
     this._renderResources(data.resources);
     this._renderStations(data.stations);
@@ -219,6 +240,49 @@ export default class Billboard3DRenderer {
     }
 
     this.renderer.render(this.scene, this.camera);
+  }
+
+  _renderWalls(chunks) {
+    if (!chunks || chunks.size === 0) {
+      this.wallMesh.count = 0;
+      return;
+    }
+
+    const centerX = this.smoothedFocus.x;
+    const centerZ = this.smoothedFocus.z;
+    const cullRadius = (this.groundMesh.scale.x + this.groundMesh.scale.y) * 0.42;
+
+    let index = 0;
+    for (const chunk of chunks.values()) {
+      const ox = chunk.chunkX * CHUNK_SIZE * TILE_SIZE;
+      const oy = chunk.chunkY * CHUNK_SIZE * TILE_SIZE;
+
+      for (let ty = 0; ty < CHUNK_SIZE; ty++) {
+        for (let tx = 0; tx < CHUNK_SIZE; tx++) {
+          const tileId = chunk.tiles[ty * CHUNK_SIZE + tx];
+          if (!WALL_TILE_IDS.has(tileId)) continue;
+          if (index >= MAX_WALL_INSTANCES) break;
+
+          const wx = ox + tx * TILE_SIZE + TILE_SIZE * 0.5;
+          const wz = oy + ty * TILE_SIZE + TILE_SIZE * 0.5;
+
+          const dx = wx - centerX;
+          const dz = wz - centerZ;
+          if (Math.abs(dx) > cullRadius || Math.abs(dz) > cullRadius) continue;
+
+          const height = tileId === TILE.CLIFF ? WALL_BASE_HEIGHT * 1.2 : WALL_BASE_HEIGHT;
+          this._wallPos.set(wx, height * 0.5, wz);
+          this._wallScale.set(1, height, 1);
+          this._wallMatrix.compose(this._wallPos, this._wallQuat, this._wallScale);
+          this.wallMesh.setMatrixAt(index, this._wallMatrix);
+          index += 1;
+        }
+      }
+      if (index >= MAX_WALL_INSTANCES) break;
+    }
+
+    this.wallMesh.count = index;
+    this.wallMesh.instanceMatrix.needsUpdate = true;
   }
 
   composite(ctx, width, height) {
@@ -382,7 +446,7 @@ export default class Billboard3DRenderer {
 
     mesh.visible = true;
     mesh.scale.set(size, size, 1);
-    mesh.position.set(worldX, (size * 0.46) + liftY, this._toSceneZ(worldY));
+    mesh.position.set(worldX, (size * 0.46) + liftY, worldY);
 
     // Cylindrical billboarding: only yaw, so sprites stay upright and stop wobbling.
     const dx = this.camera.position.x - mesh.position.x;
@@ -396,7 +460,7 @@ export default class Billboard3DRenderer {
   _placeShadow(worldX, worldY, size, liftY = 0) {
     const shadow = this._acquireShadowMesh();
     shadow.visible = true;
-    shadow.position.set(worldX, 0.04, this._toSceneZ(worldY));
+    shadow.position.set(worldX, 0.04, worldY);
     shadow.rotation.set(-Math.PI / 2, 0, 0);
     const scale = size * (0.8 + Math.max(0, liftY) * 0.01);
     shadow.scale.set(scale, scale * 0.68, 1);

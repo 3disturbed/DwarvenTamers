@@ -2222,6 +2222,7 @@ export default class Game {
         resources: this.resources,
         stations: this.stations,
         npcs: this.npcs,
+        chunks: this.worldManager.chunks,
         hasHorse: this.hasHorse,
         mounted: this.mounted,
         followHorse: this.followHorse,
