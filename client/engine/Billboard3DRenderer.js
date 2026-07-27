@@ -20,7 +20,7 @@ const CAMERA_POSITION_DAMPING = 1;
 const DAY_CYCLE_MS = 120000;
 const GROUND_OVERSCAN = 1.8;
 const MAX_WALL_INSTANCES = 12000;
-const WALL_BASE_HEIGHT = TILE_SIZE * 1.5;
+const WALL_BASE_HEIGHT = TILE_SIZE * 0.75;
 
 const WALL_TILE_IDS = new Set([
   TILE.WALL,
@@ -88,6 +88,7 @@ export default class Billboard3DRenderer {
     });
     this.wallMesh = new THREE.InstancedMesh(this.wallGeometry, this.wallMaterial, MAX_WALL_INSTANCES);
     this.wallMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.wallMesh.frustumCulled = false;
     this.wallMesh.count = 0;
     this.scene.add(this.wallMesh);
     this._wallMatrix = new THREE.Matrix4();
