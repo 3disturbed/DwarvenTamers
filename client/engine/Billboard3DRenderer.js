@@ -8,11 +8,13 @@ import stationSprites from '../entities/StationSprites.js';
 const MAX_PIXEL_RATIO = 2;
 const CAMERA_FOV = 58;
 const CAMERA_SIDE_OFFSET = 0;
-const CAMERA_FORWARD_OFFSET = 1.32;
-const CAMERA_HEIGHT = 0.56;
+const CAMERA_FORWARD_OFFSET = 1.46;
+const CAMERA_HEIGHT = 0.42;
 const CAMERA_LOOK_Y = 18;
 const CAMERA_NEAR = 2;
 const CAMERA_FAR_BASE = 5200;
+const CAMERA_BASE_DISTANCE = 330;
+const GROUND_OVERSCAN = 1.9;
 const CAMERA_FOLLOW_DAMPING = 0.12;
 const CAMERA_POSITION_DAMPING = 0.1;
 const DAY_CYCLE_MS = 120000;
@@ -110,8 +112,8 @@ export default class Billboard3DRenderer {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
 
-    this.groundCanvas.width = w;
-    this.groundCanvas.height = h;
+    this.groundCanvas.width = Math.max(1, Math.round(w * GROUND_OVERSCAN));
+    this.groundCanvas.height = Math.max(1, Math.round(h * GROUND_OVERSCAN));
   }
 
   beginFrame(gameCamera) {
@@ -125,7 +127,7 @@ export default class Billboard3DRenderer {
     const zoom = Math.max(0.4, gameCamera.zoom || 1);
     const targetX = gameCamera.x;
     const targetZ = this._toSceneZ(gameCamera.y);
-    const distance = 420 / zoom;
+    const distance = CAMERA_BASE_DISTANCE / zoom;
 
     const desiredPos = new THREE.Vector3(
       targetX - distance * CAMERA_SIDE_OFFSET,
