@@ -105,6 +105,8 @@ export default class FishmongerPanel {
     this.y = 0;
     this.width = PANEL_W;
     this.height = PANEL_H;
+    this.scale = 1;
+    this.touchMode = false;
 
     // Timing
     this.seed = 0;
@@ -204,9 +206,57 @@ export default class FishmongerPanel {
     this.scorePopups = [];
   }
 
-  position(screenWidth, screenHeight) {
-    this.x = (screenWidth - this.width) / 2;
-    this.y = (screenHeight - this.height) / 2;
+  position(screenWidth, screenHeight, touchDevice = false) {
+    this.touchMode = touchDevice;
+    this.scale = touchDevice
+      ? Math.min(1, (screenWidth - 8) / this.width, (screenHeight - 8) / this.height)
+      : 1;
+    this.x = (screenWidth - this.width * this.scale) / 2;
+    this.y = (screenHeight - this.height * this.scale) / 2;
+  }
+
+  handleTouch(mx, my) {
+    if (!this.visible) return null;
+    if (this.results) return { action: 'close' };
+    if (!this.active) return null;
+
+    const lx = (mx - this.x) / this.scale;
+    const ly = (my - this.y) / this.scale;
+    if (lx < 0 || lx > this.width || ly < 0 || ly > this.height) return null;
+
+    // Order cards are direct-select buttons on phones.
+    const orderW = 130;
+    const orderH = 65;
+    const orderGap = 8;
+    const orderStartX = (this.width - (3 * orderW + 2 * orderGap)) / 2;
+    if (ly >= 66 && ly <= 66 + orderH) {
+      const orderIndex = Math.floor((lx - orderStartX) / (orderW + orderGap));
+      const cardX = orderStartX + orderIndex * (orderW + orderGap);
+      if (orderIndex >= 0 && orderIndex < this.orders.length && lx <= cardX + orderW) {
+        this._selectOrder(orderIndex);
+        return { action: 'order', index: orderIndex };
+      }
+    }
+
+    // Tapping a station selects and immediately uses it.
+    const tileW = 95;
+    const tileH = 80;
+    const gapX = 8;
+    const gapY = 8;
+    const gridW = GRID_COLS * tileW + (GRID_COLS - 1) * gapX;
+    const gridStartX = (this.width - gridW) / 2;
+    const gridStartY = 140;
+    for (const station of STATIONS) {
+      const tx = gridStartX + station.col * (tileW + gapX);
+      const ty = gridStartY + station.row * (tileH + gapY);
+      if (lx >= tx && lx <= tx + tileW && ly >= ty && ly <= ty + tileH) {
+        this.cursorCol = station.col;
+        this.cursorRow = station.row;
+        this._interact();
+        return { action: 'station', stationId: station.id };
+      }
+    }
+    return null;
   }
 
   getScoreReport() {
@@ -745,6 +795,7 @@ export default class FishmongerPanel {
 
     ctx.save();
     ctx.translate(this.x, this.y);
+    ctx.scale(this.scale, this.scale);
 
     // Background
     ctx.fillStyle = 'rgba(0,0,0,0.92)';
@@ -1089,7 +1140,11 @@ export default class FishmongerPanel {
     ctx.font = '10px monospace';
     ctx.fillStyle = '#666';
     ctx.textAlign = 'center';
-    ctx.fillText('[WASD] Move   [Space] Interact   [1-3] Select Order', this.width / 2, y);
+    ctx.fillText(
+      this.touchMode ? 'Tap an order, then tap each highlighted station' : '[WASD] Move   [Space] Interact   [1-3] Select Order',
+      this.width / 2,
+      y,
+    );
   }
 
   _renderPopups(ctx) {
@@ -1169,7 +1224,7 @@ export default class FishmongerPanel {
     ctx.font = '12px monospace';
     ctx.fillStyle = '#888';
     ctx.textAlign = 'center';
-    ctx.fillText('Press Escape or click to close', this.width / 2, this.height - 20);
+    ctx.fillText(this.touchMode ? 'Tap anywhere to close' : 'Press Escape or click to close', this.width / 2, this.height - 20);
   }
 
   // ── Utility ──

@@ -937,7 +937,7 @@ export default class PetBattlePanel {
     this._renderLog(ctx, width, height);
 
     // Menu or end screen
-    const menuY = height * 0.76;
+    const menuY = width < 400 ? height * 0.66 : height * 0.76;
     const menuH = height - menuY - 8;
     ctx.fillStyle = 'rgba(20, 20, 40, 0.92)';
     ctx.fillRect(8, menuY, width - 16, menuH);
@@ -1290,13 +1290,16 @@ export default class PetBattlePanel {
       { label: 'Pass', sub: 'End', enabled: true },
     ];
 
-    const cellW = (width - 24) / options.length;
-    const cellH = menuH - 8;
+    const compact = width < 400;
+    const columns = compact ? 3 : options.length;
+    const rows = compact ? 2 : 1;
+    const cellW = (width - 24) / columns;
+    const cellH = (menuH - 8) / rows;
 
     for (let i = 0; i < options.length; i++) {
       const opt = options[i];
-      const cx = 12 + i * cellW;
-      const cy = menuY + 4;
+      const cx = 12 + (i % columns) * cellW;
+      const cy = menuY + 4 + Math.floor(i / columns) * cellH;
 
       if (i === this.menuIndex) {
         ctx.fillStyle = opt.enabled ? 'rgba(52, 152, 219, 0.3)' : 'rgba(100, 50, 50, 0.3)';
@@ -1609,7 +1612,7 @@ export default class PetBattlePanel {
     // Block input during animations or enemy turns
     if (this.isAnimating || this.activeUnit?.team !== 'a') return true;
 
-    const menuY = height * 0.76;
+    const menuY = width < 400 ? height * 0.66 : height * 0.76;
     const menuH = height - menuY - 8;
 
     // Only handle clicks in the menu area
@@ -1618,8 +1621,13 @@ export default class PetBattlePanel {
     if (this.menuMode === 'main') {
       // Main menu: 5 horizontal cells
       const options = ['attack', 'skills', 'defend', 'flee', 'pass'];
-      const cellW = (width - 24) / options.length;
-      const cellIdx = Math.floor((mx - 12) / cellW);
+      const columns = width < 400 ? 3 : options.length;
+      const rows = width < 400 ? 2 : 1;
+      const cellW = (width - 24) / columns;
+      const cellH = (menuH - 8) / rows;
+      const col = Math.floor((mx - 12) / cellW);
+      const row = Math.floor((my - menuY - 4) / cellH);
+      const cellIdx = row * columns + col;
       if (cellIdx >= 0 && cellIdx < options.length) {
         this.menuIndex = cellIdx;
         this.confirm(sendAction);

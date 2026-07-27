@@ -819,7 +819,11 @@ export default class Game {
     // Alchemy minigame callbacks
     this.network.onAlchemyStart = (data) => {
       this.inAlchemy = true;
-      this.alchemyPanel.position(this.renderer.logicalWidth, this.renderer.logicalHeight);
+      this.alchemyPanel.position(
+        this.renderer.logicalWidth,
+        this.renderer.logicalHeight,
+        this.input.isTouchDevice(),
+      );
       this.alchemyPanel.start(data);
     };
     this.network.onAlchemyEnd = (data) => {
@@ -830,7 +834,11 @@ export default class Game {
     // Fishmonger minigame callbacks
     this.network.onFishmongerStart = (data) => {
       this.inFishmonger = true;
-      this.fishmongerPanel.position(this.renderer.logicalWidth, this.renderer.logicalHeight);
+      this.fishmongerPanel.position(
+        this.renderer.logicalWidth,
+        this.renderer.logicalHeight,
+        this.input.isTouchDevice(),
+      );
       this.fishmongerPanel.start(data);
     };
     this.network.onFishmongerEnd = (data) => {
@@ -1059,6 +1067,7 @@ export default class Game {
 
       if (this.alchemyPanel.active) {
         this.alchemyPanel.handleInput(kb);
+        if (actions.screenTap) this.alchemyPanel.handleTouch(uiMX, uiMY);
       }
 
       // Game finished — send score report to server
@@ -1068,7 +1077,7 @@ export default class Game {
       }
 
       // Escape or click to close results
-      if (actions.cancel || actions.action) {
+      if (actions.cancel || actions.action || actions.screenTap) {
         if (this.alchemyPanel.results) {
           this.alchemyPanel.close();
         }
@@ -1085,6 +1094,7 @@ export default class Game {
 
       if (this.fishmongerPanel.active) {
         this.fishmongerPanel.handleInput(kb);
+        if (actions.screenTap) this.fishmongerPanel.handleTouch(uiMX, uiMY);
       }
 
       // Game finished — send score report to server
@@ -1094,7 +1104,7 @@ export default class Game {
       }
 
       // Escape or click to close results
-      if (actions.cancel || actions.action) {
+      if (actions.cancel || actions.action || actions.screenTap) {
         if (this.fishmongerPanel.results) {
           this.fishmongerPanel.close();
         }
@@ -2202,13 +2212,13 @@ export default class Game {
 
     // Alchemy minigame panel
     if (this.alchemyPanel.visible) {
-      this.alchemyPanel.position(r.logicalWidth, r.logicalHeight);
+      this.alchemyPanel.position(r.logicalWidth, r.logicalHeight, this.input.isTouchDevice());
       this.alchemyPanel.render(ctx);
     }
 
     // Fishmonger minigame panel
     if (this.fishmongerPanel.visible) {
-      this.fishmongerPanel.position(r.logicalWidth, r.logicalHeight);
+      this.fishmongerPanel.position(r.logicalWidth, r.logicalHeight, this.input.isTouchDevice());
       this.fishmongerPanel.render(ctx);
     }
 

@@ -303,7 +303,7 @@ export default class PvPBattlePanel {
     this._renderLog(ctx, width, height);
 
     // Menu area
-    const menuY = height * 0.76;
+    const menuY = width < 400 ? height * 0.66 : height * 0.76;
     const menuH = height - menuY - 8;
     ctx.fillStyle = 'rgba(20, 20, 40, 0.92)';
     ctx.fillRect(8, menuY, width - 16, menuH);
@@ -552,13 +552,16 @@ export default class PvPBattlePanel {
       { label: 'Pass', sub: 'End', enabled: true },
     ];
 
-    const cellW = (width - 24) / options.length;
-    const cellH = menuH - 8;
+    const compact = width < 400;
+    const columns = compact ? 3 : options.length;
+    const rows = compact ? 2 : 1;
+    const cellW = (width - 24) / columns;
+    const cellH = (menuH - 8) / rows;
 
     for (let i = 0; i < options.length; i++) {
       const opt = options[i];
-      const cx = 12 + i * cellW;
-      const cy = menuY + 4;
+      const cx = 12 + (i % columns) * cellW;
+      const cy = menuY + 4 + Math.floor(i / columns) * cellH;
 
       if (i === this.menuIndex) {
         ctx.fillStyle = opt.color ? 'rgba(200,50,50,0.3)' : (opt.enabled ? 'rgba(52, 152, 219, 0.3)' : 'rgba(100, 50, 50, 0.3)');
@@ -711,7 +714,7 @@ export default class PvPBattlePanel {
     // Block input during animations or opponent turns
     if (this.isAnimating || !this._isMyTurn()) return true;
 
-    const menuY = height * 0.76;
+    const menuY = width < 400 ? height * 0.66 : height * 0.76;
     const menuH = height - menuY - 8;
 
     if (my < menuY || my > menuY + menuH) return true;
@@ -720,8 +723,13 @@ export default class PvPBattlePanel {
 
     if (this.menuMode === 'main') {
       const optionCount = 5;
-      const cellW = (width - 24) / optionCount;
-      const cellIdx = Math.floor((mx - 12) / cellW);
+      const columns = width < 400 ? 3 : optionCount;
+      const rows = width < 400 ? 2 : 1;
+      const cellW = (width - 24) / columns;
+      const cellH = (menuH - 8) / rows;
+      const col = Math.floor((mx - 12) / cellW);
+      const row = Math.floor((my - menuY - 4) / cellH);
+      const cellIdx = row * columns + col;
       if (cellIdx >= 0 && cellIdx < optionCount) {
         this.menuIndex = cellIdx;
         this.confirm(sendAction, sendForfeit);

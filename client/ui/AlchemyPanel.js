@@ -75,6 +75,8 @@ export default class AlchemyPanel {
     this.y = 0;
     this.width = 400;
     this.height = 520;
+    this.scale = 1;
+    this.touchMode = false;
 
     this.timeLeft = 180;
     this.timer = 0;
@@ -223,7 +225,9 @@ export default class AlchemyPanel {
 
   handleInput(kb) {
     if (this.phase === 'heating') {
-      this.isHeating = kb.isDown('Space') || kb.isDown('KeyW');
+      if (!this.touchMode) {
+        this.isHeating = kb.isDown('Space') || kb.isDown('KeyW');
+      }
     } else if (this.phase === 'ingredients') {
       if (kb.wasJustPressed('Digit1')) this._selectIngredient(0);
       if (kb.wasJustPressed('Digit2')) this._selectIngredient(1);
@@ -231,8 +235,10 @@ export default class AlchemyPanel {
       if (kb.wasJustPressed('Digit4')) this._selectIngredient(3);
       if (kb.wasJustPressed('Digit5')) this._selectIngredient(4);
     } else if (this.phase === 'stabilizing') {
-      this.inputLeft = kb.isDown('KeyA');
-      this.inputRight = kb.isDown('KeyD');
+      if (!this.touchMode) {
+        this.inputLeft = kb.isDown('KeyA');
+        this.inputRight = kb.isDown('KeyD');
+      }
     }
   }
 
@@ -299,14 +305,55 @@ export default class AlchemyPanel {
     this.scorePopups = [];
   }
 
-  position(screenWidth, screenHeight) {
-    this.x = (screenWidth - this.width) / 2;
-    this.y = (screenHeight - this.height) / 2;
+  position(screenWidth, screenHeight, touchDevice = false) {
+    this.touchMode = touchDevice;
+    this.scale = touchDevice
+      ? Math.min(1, (screenWidth - 8) / this.width, (screenHeight - 8) / this.height)
+      : 1;
+    this.x = (screenWidth / this.scale - this.width) / 2;
+    this.y = (screenHeight / this.scale - this.height) / 2;
   }
 
   handleClick(mx, my) {
     if (!this.visible) return null;
     if (this.results) return { action: 'close' };
+    return null;
+  }
+
+  handleTouch(mx, my) {
+    if (!this.visible) return null;
+    if (this.results) return { action: 'close' };
+    if (!this.active || this.phase === 'grading') return null;
+
+    const lx = mx / this.scale - this.x;
+    const ly = my / this.scale - this.y;
+    if (lx < 0 || lx > this.width || ly < 0 || ly > this.height) return null;
+
+    if (this.phase === 'heating' && ly >= 350 && ly <= 430) {
+      this.isHeating = !this.isHeating;
+      return { action: 'heat', active: this.isHeating };
+    }
+
+    if (this.phase === 'ingredients') {
+      const slotW = 68;
+      const gap = 6;
+      const totalW = this.ingredientCount * slotW + (this.ingredientCount - 1) * gap;
+      const startX = (this.width - totalW) / 2;
+      if (ly >= 104 && ly <= 172) {
+        const index = Math.floor((lx - startX) / (slotW + gap));
+        const sx = startX + index * (slotW + gap);
+        if (index >= 0 && index < this.ingredientCount && lx <= sx + slotW) {
+          this._selectIngredient(index);
+          return { action: 'ingredient', index };
+        }
+      }
+    }
+
+    if (this.phase === 'stabilizing' && ly >= 350 && ly <= 440) {
+      const direction = lx < this.width / 2 ? -1 : 1;
+      this.pointerVelocity += direction * 0.9;
+      return { action: 'balance', direction };
+    }
     return null;
   }
 
@@ -439,6 +486,7 @@ export default class AlchemyPanel {
   render(ctx) {
     if (!this.visible) return;
     ctx.save();
+    ctx.scale(this.scale, this.scale);
 
     // Panel shadow
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
@@ -569,13 +617,50 @@ export default class AlchemyPanel {
     ctx.font = '9px monospace';
     ctx.textAlign = 'center';
     let hint = '';
-    if (this.phase === 'heating') hint = this.venting ? 'Venting pressure...' : 'Hold SPACE or W to heat';
-    else if (this.phase === 'ingredients') hint = 'Press 1-' + this.ingredientCount + ' in recipe order. Time the green zone!';
-    else if (this.phase === 'stabilizing') hint = 'Tap A/D to counterbalance the wobble';
+    if (this.phase === 'heating') hint = this.venting ? 'Venting pressure...' : (this.touchMode ? 'Tap HEAT to toggle the burner' : 'Hold SPACE or W to heat');
+    else if (this.phase === 'ingredients') hint = this.touchMode ? 'Tap ingredients in recipe order' : 'Press 1-' + this.ingredientCount + ' in recipe order. Time the green zone!';
+    else if (this.phase === 'stabilizing') hint = this.touchMode ? 'Tap LEFT / RIGHT to counterbalance' : 'Tap A/D to counterbalance the wobble';
     else if (this.phase === 'grading') hint = 'Next potion starting...';
     ctx.fillText(hint, this.x + this.width / 2, this.y + this.height - 12);
 
+    if (this.touchMode) this._renderTouchControls(ctx);
+
     ctx.restore();
+  }
+
+  _renderTouchControls(ctx) {
+    if (this.phase === 'heating') {
+      const bx = this.x + 130;
+      const by = this.y + 350;
+      const bw = 140;
+      const bh = 80;
+      ctx.fillStyle = this.isHeating ? 'rgba(231, 76, 60, 0.65)' : 'rgba(45, 45, 65, 0.95)';
+      ctx.fillRect(bx, by, bw, bh);
+      ctx.strokeStyle = this.isHeating ? '#ff6655' : '#8e44ad';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(bx, by, bw, bh);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 18px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(this.isHeating ? 'HEAT ON' : 'HEAT', bx + bw / 2, by + 46);
+    } else if (this.phase === 'stabilizing') {
+      const by = this.y + 350;
+      const bh = 90;
+      for (const [label, bx, color] of [
+        ['\u25c0 LEFT', this.x + 24, '#3498db'],
+        ['RIGHT \u25b6', this.x + 206, '#e67e22'],
+      ]) {
+        ctx.fillStyle = 'rgba(45, 45, 65, 0.95)';
+        ctx.fillRect(bx, by, 170, bh);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(bx, by, 170, bh);
+        ctx.fillStyle = color;
+        ctx.font = 'bold 16px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, bx + 85, by + 51);
+      }
+    }
   }
 
   // === PHASE RENDERERS ===
