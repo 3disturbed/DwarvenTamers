@@ -54,59 +54,12 @@ const PERFORMANCE_PRESETS = {
   },
 };
 const DEFAULT_PERFORMANCE_PRESET = 'meh';
-const STARTUP_REFRESH_KEY = `${APP_STORAGE_PREFIX}startup-refresh`;
-const STARTUP_REFRESH_PARAM = 'dt-refresh';
 
 // DwarvenTamers has one local character and loads directly without an account screen.
-if (!(await ensureHardRefreshOnStart())) {
-  initializePwa();
-  initializeOnboarding();
-  initializeSaveManager();
-  startGame();
-}
-
-async function ensureHardRefreshOnStart() {
-  if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') {
-    return false;
-  }
-
-  const refreshUrl = new URL(window.location.href);
-  const hasRefreshParam = refreshUrl.searchParams.has(STARTUP_REFRESH_PARAM);
-  const alreadyRefreshed = sessionStorage.getItem(STARTUP_REFRESH_KEY) === '1';
-
-  if (alreadyRefreshed) {
-    sessionStorage.removeItem(STARTUP_REFRESH_KEY);
-    if (hasRefreshParam) {
-      refreshUrl.searchParams.delete(STARTUP_REFRESH_PARAM);
-      window.history.replaceState({}, '', `${refreshUrl.pathname}${refreshUrl.search}${refreshUrl.hash}`);
-    }
-    return false;
-  }
-
-  sessionStorage.setItem(STARTUP_REFRESH_KEY, '1');
-
-  if ('serviceWorker' in navigator) {
-    try {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map((registration) => registration.unregister()));
-    } catch {
-      // Ignore refresh-time cleanup failures and still force a fresh navigation.
-    }
-  }
-
-  if ('caches' in window) {
-    try {
-      const cacheKeys = await caches.keys();
-      await Promise.all(cacheKeys.map((cacheKey) => caches.delete(cacheKey)));
-    } catch {
-      // Ignore refresh-time cleanup failures and still force a fresh navigation.
-    }
-  }
-
-  refreshUrl.searchParams.set(STARTUP_REFRESH_PARAM, String(Date.now()));
-  window.location.replace(refreshUrl.toString());
-  return true;
-}
+initializePwa();
+initializeOnboarding();
+initializeSaveManager();
+startGame();
 
 function startGame() {
   const canvas = document.getElementById('game');
