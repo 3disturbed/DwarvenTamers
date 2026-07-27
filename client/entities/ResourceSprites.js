@@ -48,13 +48,18 @@ const TREE_IDS = new Set([
 ]);
 
 const COMPACT_NODE_IDS = new Set([
-  'berry_bush', 'loose_stone', 'stone_node',
+  'loose_stone', 'stone_node',
   'copper_node', 'tin_node', 'iron_deposit', 'silver_vein',
   'obsidian_node', 'obsidian_large', 'flametal_node',
   'cave_copper_vein', 'cave_tin_vein', 'cave_iron_vein',
   'cave_coal_deposit', 'cave_silver_vein', 'cave_iron_scrap_pile',
   'cave_obsidian_vein', 'cave_crystal_cluster', 'cave_flametal_vein',
   'cave_sulfite_deposit',
+]);
+
+const MEDIUM_NODE_IDS = new Set([
+  'dragon_egg', 'guck_sac', 'bloodbag', 'surtling_core_node',
+  'stick_pile', 'charred_bone_pile',
 ]);
 
 class ResourceSprites {
@@ -102,12 +107,15 @@ class ResourceSprites {
   }
 
   getDrawSize(resourceId) {
-    // Camera defaults to 2x zoom, so these world sizes appear as 48px and
-    // 24px on screen respectively. Compact nodes stay clearly below player
-    // size while trees retain a readable silhouette.
-    if (TREE_IDS.has(resourceId)) return 24;
-    if (COMPACT_NODE_IDS.has(resourceId)) return 12;
-    return 64;
+    // Establish a strong world-scale hierarchy. Trees tower over the 24px
+    // player, while rocks, ore, and forage stay close to the ground. Every
+    // resource has a bounded fallback so a missing category can never become
+    // a tree-sized 64px node again.
+    if (TREE_IDS.has(resourceId)) return 64;
+    if (FORAGE_IDS.has(resourceId)) return 18;
+    if (COMPACT_NODE_IDS.has(resourceId)) return 16;
+    if (MEDIUM_NODE_IDS.has(resourceId)) return 24;
+    return 20;
   }
 
   /**
