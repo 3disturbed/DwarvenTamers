@@ -102,8 +102,8 @@ export default class NetworkClient {
     this.onPvpBattleEnd = null;
   }
 
-  connect() {
-    this.socket = createLocalSocket(window.__DWARVEN_TAMERS_MODE || 'normal');
+  connect(worldOptions = {}) {
+    this.socket = createLocalSocket(window.__DWARVEN_TAMERS_MODE || 'normal', worldOptions);
 
     this.socket.on('connect', () => {
       this.connected = true;

@@ -1,11 +1,13 @@
 export default class GameLoop {
-  constructor(game) {
+  constructor(game, options = {}) {
     this.game = game;
     this.running = false;
     this.lastTime = 0;
     this.accumulator = 0;
     this.fixedStep = 1 / 60;
     this.frameId = null;
+    this.maxFPS = options.maxFPS || 60;
+    this.frameInterval = this.maxFPS > 0 ? 1000 / this.maxFPS : 0;
   }
 
   start() {
@@ -24,6 +26,11 @@ export default class GameLoop {
 
   loop(currentTime) {
     if (!this.running) return;
+
+    if (this.frameInterval > 0 && (currentTime - this.lastTime) < this.frameInterval) {
+      this.frameId = requestAnimationFrame((t) => this.loop(t));
+      return;
+    }
 
     const dt = Math.min((currentTime - this.lastTime) / 1000, 0.1); // cap at 100ms
     this.lastTime = currentTime;

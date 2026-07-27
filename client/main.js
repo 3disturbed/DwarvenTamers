@@ -15,8 +15,45 @@ import { initializeSaveManager } from './save-manager.js';
 
 const BRAND_SPLASH_MS = 5000;
 const GAME_MODE_KEY = `${APP_STORAGE_PREFIX}game-mode`;
+const WORLD_OPTIONS_KEY = `${APP_STORAGE_PREFIX}world-options`;
 const GAME_MODE_NORMAL = 'normal';
 const GAME_MODE_SURVIVAL = 'survival';
+const DEFAULT_WORLD_OPTIONS = {
+  seed: '42',
+  horseSpawnChance: 1,
+  chestSpawnChance: 1,
+};
+const PERFORMANCE_PRESET_KEY = `${APP_STORAGE_PREFIX}performance-preset`; 
+const PERFORMANCE_PRESETS = {
+  power_saver: {
+    id: 'power_saver',
+    label: 'Power Saver',
+    frameRateCap: 30,
+    renderDetail: 'low',
+    use3d: false,
+    maxPixelRatio: 1,
+    notes: 'Lowest load. Uses the 2D renderer and a 30 FPS cap.',
+  },
+  meh: {
+    id: 'meh',
+    label: 'Meh',
+    frameRateCap: 45,
+    renderDetail: 'medium',
+    use3d: true,
+    maxPixelRatio: 1.5,
+    notes: 'Balanced. 3D rendering with softer presentation.',
+  },
+  bea_u_tiful: {
+    id: 'bea_u_tiful',
+    label: 'Bea-u-tiful',
+    frameRateCap: 60,
+    renderDetail: 'high',
+    use3d: true,
+    maxPixelRatio: 2,
+    notes: 'Best visual quality. Full 3D detail and shadows.',
+  },
+};
+const DEFAULT_PERFORMANCE_PRESET = 'meh';
 
 // DwarvenTamers has one local character and loads directly without an account screen.
 initializePwa();
@@ -35,6 +72,16 @@ function startGame() {
   const survivalButton = document.getElementById('main-menu-survival');
   const helpButton = document.getElementById('main-menu-help');
   const saveButton = document.getElementById('main-menu-save');
+  const settingsButton = document.getElementById('main-menu-settings');
+  const settingsDialog = document.getElementById('settings-dialog');
+  const settingsClose = document.getElementById('settings-close');
+  const settingsPanel = document.getElementById('settings-panel');
+  const settingsTabs = Array.from(document.querySelectorAll('.settings-tab'));
+  const seedInput = document.getElementById('world-seed');
+  const horseSpawnInput = document.getElementById('horse-spawn');
+  const chestSpawnInput = document.getElementById('chest-spawn');
+  const horseSpawnValue = document.getElementById('horse-spawn-value');
+  const chestSpawnValue = document.getElementById('chest-spawn-value');
   const helpDialog = document.getElementById('help-dialog');
   const saveDialog = document.getElementById('save-dialog');
   let loaderReady = false;
@@ -43,14 +90,99 @@ function startGame() {
   let gameStarted = false;
   let menuShown = false;
 
+  const loadWorldOptions = () => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(WORLD_OPTIONS_KEY) || 'null');
+      return { ...DEFAULT_WORLD_OPTIONS, ...(saved || {}) };
+    } catch {
+      return { ...DEFAULT_WORLD_OPTIONS };
+    }
+  };
+
+  const worldOptions = loadWorldOptions();
+  const loadPerformancePreset = () => {
+    const saved = localStorage.getItem(PERFORMANCE_PRESET_KEY);
+    return PERFORMANCE_PRESETS[saved] ? saved : DEFAULT_PERFORMANCE_PRESET;
+  };
+
+  let performancePresetId = loadPerformancePreset();
+
+  if (seedInput) seedInput.value = String(worldOptions.seed ?? DEFAULT_WORLD_OPTIONS.seed);
+  if (horseSpawnInput) horseSpawnInput.value = String(worldOptions.horseSpawnChance ?? DEFAULT_WORLD_OPTIONS.horseSpawnChance);
+  if (chestSpawnInput) chestSpawnInput.value = String(worldOptions.chestSpawnChance ?? DEFAULT_WORLD_OPTIONS.chestSpawnChance);
+
+  const updateWorldOptionLabels = () => {
+    if (horseSpawnValue && horseSpawnInput) horseSpawnValue.textContent = `${Number(horseSpawnInput.value).toFixed(1)}x`;
+    if (chestSpawnValue && chestSpawnInput) chestSpawnValue.textContent = `${Number(chestSpawnInput.value).toFixed(1)}x`;
+  };
+
+  const renderPerformancePresetPanel = () => {
+    const preset = PERFORMANCE_PRESETS[performancePresetId] || PERFORMANCE_PRESETS[DEFAULT_PERFORMANCE_PRESET];
+    if (!settingsPanel) return;
+    settingsPanel.innerHTML = `
+      <h2>${preset.label}</h2>
+      <p>${preset.notes}</p>
+      <dl>
+        <dt>Frame cap</dt><dd>${preset.frameRateCap} FPS</dd>
+        <dt>Renderer</dt><dd>${preset.use3d ? '3D' : '2D'}</dd>
+        <dt>Detail</dt><dd>${preset.renderDetail}</dd>
+      </dl>
+    `;
+    for (const tab of settingsTabs) {
+      tab.classList.toggle('active', tab.dataset.preset === performancePresetId);
+      tab.setAttribute('aria-selected', tab.dataset.preset === performancePresetId ? 'true' : 'false');
+    }
+  };
+
+  const setPerformancePreset = (presetId) => {
+    if (!PERFORMANCE_PRESETS[presetId]) return;
+    performancePresetId = presetId;
+    localStorage.setItem(PERFORMANCE_PRESET_KEY, presetId);
+    renderPerformancePresetPanel();
+  };
+
+  updateWorldOptionLabels();
+  renderPerformancePresetPanel();
+  horseSpawnInput?.addEventListener('input', updateWorldOptionLabels);
+  chestSpawnInput?.addEventListener('input', updateWorldOptionLabels);
+  settingsTabs.forEach((tab) => {
+    tab.addEventListener('click', () => setPerformancePreset(tab.dataset.preset));
+  });
+
+  const getLaunchOptions = () => {
+    const seedText = (seedInput?.value || '').trim();
+    const parsedSeed = Number.parseInt(seedText, 10);
+    const options = {
+      seed: Number.isFinite(parsedSeed) ? parsedSeed : Number.parseInt(DEFAULT_WORLD_OPTIONS.seed, 10),
+      horseSpawnChance: Number.parseFloat(horseSpawnInput?.value || `${DEFAULT_WORLD_OPTIONS.horseSpawnChance}`),
+      chestSpawnChance: Number.parseFloat(chestSpawnInput?.value || `${DEFAULT_WORLD_OPTIONS.chestSpawnChance}`),
+    };
+
+    if (!Number.isFinite(options.horseSpawnChance)) options.horseSpawnChance = DEFAULT_WORLD_OPTIONS.horseSpawnChance;
+    if (!Number.isFinite(options.chestSpawnChance)) options.chestSpawnChance = DEFAULT_WORLD_OPTIONS.chestSpawnChance;
+
+    localStorage.setItem(WORLD_OPTIONS_KEY, JSON.stringify({
+      seed: String(options.seed),
+      horseSpawnChance: options.horseSpawnChance,
+      chestSpawnChance: options.chestSpawnChance,
+    }));
+
+    return {
+      ...options,
+      performance: PERFORMANCE_PRESETS[performancePresetId] || PERFORMANCE_PRESETS[DEFAULT_PERFORMANCE_PRESET],
+    };
+  };
+
   const launchGame = (mode = GAME_MODE_NORMAL) => {
     if (gameStarted) return;
     gameStarted = true;
+    const launchOptions = getLaunchOptions();
     window.__DWARVEN_TAMERS_MODE = mode;
+    window.__DWARVEN_TAMERS_WORLD_OPTIONS = launchOptions;
     localStorage.setItem(GAME_MODE_KEY, mode);
     mainMenu?.classList.remove('visible');
     if (mainMenu) mainMenu.hidden = true;
-    const game = new Game(canvas);
+    const game = new Game(canvas, launchOptions);
     game.start();
   };
 
@@ -121,8 +253,10 @@ function startGame() {
 
   playButton?.addEventListener('click', () => launchGame(GAME_MODE_NORMAL));
   survivalButton?.addEventListener('click', () => launchGame(GAME_MODE_SURVIVAL));
+  settingsButton?.addEventListener('click', () => settingsDialog?.showModal());
   helpButton?.addEventListener('click', () => helpDialog?.showModal());
   saveButton?.addEventListener('click', () => saveDialog?.showModal());
+  settingsClose?.addEventListener('click', () => settingsDialog?.close());
 
   // Fullscreen button for mobile - only show on touch devices when not fullscreen
   const fsBtn = document.getElementById('fullscreen-btn');

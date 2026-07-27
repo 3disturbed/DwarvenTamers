@@ -55,10 +55,17 @@ const EXPLORED_STORAGE_SUFFIX = 'explored';
 const BIOME_STORAGE_SUFFIX = 'biomes';
 
 export default class Game {
-  constructor(canvas) {
+  constructor(canvas, startOptions = {}) {
     this.canvas = canvas;
+    this.startOptions = startOptions;
+    this.performanceOptions = startOptions.performance || {
+      frameRateCap: 45,
+      renderDetail: 'medium',
+      use3d: true,
+      maxPixelRatio: 1.5,
+    };
     this.renderer = new Renderer(canvas);
-    this.billboard3d = new Billboard3DRenderer(canvas);
+    this.billboard3d = new Billboard3DRenderer(canvas, this.performanceOptions);
     this.camera = new Camera();
     this.input = new InputManager(canvas);
     this.network = new NetworkClient();
@@ -66,7 +73,7 @@ export default class Game {
     this.touchControls = new TouchControls(this.renderer, this.input.touch);
     this.worldManager = new ClientWorldManager(this.network);
     this.clientCollision = new ClientTileCollision(this.worldManager);
-    this.loop = new GameLoop(this);
+    this.loop = new GameLoop(this, { maxFPS: this.performanceOptions.frameRateCap });
 
     // Local player state
     this.localPlayer = null;
@@ -880,7 +887,7 @@ export default class Game {
   }
 
   start() {
-    this.network.connect();
+    this.network.connect(this.startOptions);
 
     // Show touch controls on touch devices
     if (this.input.isTouchDevice()) {
@@ -2186,7 +2193,7 @@ export default class Game {
   render(interpolation) {
     const r = this.renderer;
     const ctx = r.ctx;
-    const use3d = this.billboard3d?.enabled;
+    const use3d = !!(this.performanceOptions.use3d && this.billboard3d?.enabled);
 
     r.clear();
 
@@ -2232,6 +2239,7 @@ export default class Game {
         followHorse: this.followHorse,
         localMoving,
         localFacingRight: facing.x > 0,
+        detailMode: this.performanceOptions.renderDetail,
       });
       this.billboard3d.composite(ctx, r.width, r.height);
 

@@ -42,9 +42,12 @@ const TREE_RESOURCE_IDS = new Set([
 ]);
 
 export default class Billboard3DRenderer {
-  constructor(hostCanvas) {
+  constructor(hostCanvas, options = {}) {
     this.hostCanvas = hostCanvas;
     this.enabled = this._hasWebglSupport();
+    this.maxPixelRatio = options.maxPixelRatio ?? MAX_PIXEL_RATIO;
+    this.shadowsEnabled = options.use3d !== false;
+    this.detailMode = options.renderDetail || 'medium';
     this.textureCache = new Map();
     this.pool = [];
     this.shadowPool = [];
@@ -148,7 +151,7 @@ export default class Billboard3DRenderer {
   _resizeFromHost() {
     if (!this.enabled) return;
     const rect = this.hostCanvas.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
+    const dpr = Math.min(window.devicePixelRatio || 1, this.maxPixelRatio);
     const w = Math.max(1, Math.round(rect.width));
     const h = Math.max(1, Math.round(rect.height));
     if (w === this.lastSize.w && h === this.lastSize.h && dpr === this.lastSize.dpr) return;
@@ -255,6 +258,7 @@ export default class Billboard3DRenderer {
 
   render(data) {
     if (!this.enabled) return;
+    this.detailMode = data?.detailMode || this.detailMode;
 
     this.expectedResourceCount = 0;
     this.drawnResourceCount = 0;
@@ -549,7 +553,9 @@ export default class Billboard3DRenderer {
     mesh.rotation.set((BILLBOARD_PITCH_DEG * Math.PI) / 180, 0, 0);
     mesh.material.opacity = 1;
 
-    this._placeShadow(worldX, worldY, size, liftY, shadowOptions);
+    if (this.shadowsEnabled && this.detailMode !== 'low') {
+      this._placeShadow(worldX, worldY, size, liftY, shadowOptions);
+    }
   }
 
   _placeShadow(worldX, worldY, size, liftY = 0, options = null) {

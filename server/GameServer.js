@@ -76,6 +76,11 @@ export default class GameServer {
   constructor(io, options = {}) {
     this.io = io;
     this.mode = options.mode || 'normal';
+    this.worldOptions = {
+      seed: options.seed ?? 42,
+      horseSpawnChance: options.horseSpawnChance ?? 1,
+      chestSpawnChance: options.chestSpawnChance ?? 1,
+    };
     this.players = new Map(); // playerId -> PlayerConnection (network wrapper)
     this.messageRouter = new MessageRouter();
     this.lastTick = Date.now();
@@ -86,7 +91,7 @@ export default class GameServer {
     this.systemManager = new SystemManager();
 
     // World
-    this.worldManager = new WorldManager({ mode: this.mode });
+    this.worldManager = new WorldManager({ mode: this.mode, ...this.worldOptions });
 
     // Town
     this.townManager = new TownManager();

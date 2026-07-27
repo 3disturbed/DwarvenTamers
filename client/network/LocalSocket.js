@@ -79,10 +79,11 @@ class LocalIo {
 }
 
 class LocalGameHost {
-  constructor(mode = 'normal') {
+  constructor(mode = 'normal', worldOptions = {}) {
     this.mode = mode;
+    this.worldOptions = worldOptions;
     this.io = new LocalIo();
-    this.game = new GameServer(this.io, { mode });
+    this.game = new GameServer(this.io, { mode, ...worldOptions });
     this.ready = this.game.init().then(() => this.game.start());
   }
 
@@ -117,7 +118,17 @@ class LocalGameHost {
 
 const hosts = new Map();
 
-export function createLocalSocket(mode = 'normal') {
-  if (!hosts.has(mode)) hosts.set(mode, new LocalGameHost(mode));
-  return new LocalClientSocket(hosts.get(mode));
+function buildHostKey(mode, worldOptions = {}) {
+  return JSON.stringify({
+    mode,
+    seed: worldOptions.seed ?? 42,
+    horseSpawnChance: worldOptions.horseSpawnChance ?? 1,
+    chestSpawnChance: worldOptions.chestSpawnChance ?? 1,
+  });
+}
+
+export function createLocalSocket(mode = 'normal', worldOptions = {}) {
+  const hostKey = buildHostKey(mode, worldOptions);
+  if (!hosts.has(hostKey)) hosts.set(hostKey, new LocalGameHost(mode, worldOptions));
+  return new LocalClientSocket(hosts.get(hostKey));
 }

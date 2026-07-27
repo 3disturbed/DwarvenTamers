@@ -15,11 +15,12 @@ export default class WorldGenerator {
   constructor(seed, biomeIndex, biomeDataMap, options = {}) {
     this.seed = seed;
     this.mode = options.mode || 'normal';
+    this.spawnOptions = options.spawnOptions || {};
     this.noise = new NoiseGenerator(seed);
     this.gradient = new GradientResolver(biomeIndex);
     this.terrain = new TerrainGenerator(this.noise);
     this.resources = new ResourcePlacer(this.noise, this.gradient);
-    this.enemies = new EnemySpawner(this.noise, this.gradient);
+    this.enemies = new EnemySpawner(this.noise, this.gradient, { spawnOptions: this.spawnOptions });
     this.caves = new CaveGenerator(this.noise);
     this.rivers = new RiverGenerator(this.noise, biomeIndex);
     this.biomeDataMap = biomeDataMap; // biomeId -> {biome.json, tiles.json, resources.json, enemies.json}
@@ -131,9 +132,11 @@ export default class WorldGenerator {
 
     const caveCoverage = candidates.length / (CHUNK_SIZE * CHUNK_SIZE);
     const configuredChance = biomeData.biome.cave.chestChance;
-    const chestChance = typeof configuredChance === 'number'
+    const baseChestChance = typeof configuredChance === 'number'
       ? configuredChance
       : Math.min(0.4, 0.04 + caveCoverage * 0.6);
+    const chestMultiplier = this.spawnOptions.chestSpawnChance ?? 1;
+    const chestChance = Math.max(0, Math.min(1, baseChestChance * chestMultiplier));
     const firstRoll = this._chunkRand(chunkX, chunkY, 11);
     if (firstRoll > chestChance) return [];
 
@@ -144,7 +147,7 @@ export default class WorldGenerator {
 
     const structures = [];
     const used = [];
-    const secondChance = Math.min(0.15, caveCoverage * 0.25);
+    const secondChance = Math.min(0.15, caveCoverage * 0.25) * Math.max(0, this.spawnOptions.chestSpawnChance ?? 1);
     const chestCount = 1 + (this._chunkRand(chunkX, chunkY, 12) < secondChance ? 1 : 0);
 
     for (let n = 0; n < chestCount; n++) {

@@ -56,14 +56,51 @@
       <p class="main-menu__eyebrow">DARKS GAMES</p>
       <h1 class="main-menu__title">Dwarven<br>Tamers</h1>
       <p class="main-menu__subtitle">A browser survival crafting adventure.</p>
+      <div class="main-menu__settings">
+        <label class="main-menu__field">
+          <span>World seed</span>
+          <input id="world-seed" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" value="42">
+        </label>
+        <label class="main-menu__field">
+          <span>Horse spawn chance</span>
+          <div class="main-menu__range-row">
+            <input id="horse-spawn" type="range" min="0" max="3" step="0.1" value="1">
+            <output id="horse-spawn-value">1.0x</output>
+          </div>
+        </label>
+        <label class="main-menu__field">
+          <span>Chest spawn chance</span>
+          <div class="main-menu__range-row">
+            <input id="chest-spawn" type="range" min="0" max="3" step="0.1" value="1">
+            <output id="chest-spawn-value">1.0x</output>
+          </div>
+        </label>
+      </div>
       <div class="main-menu__actions">
         <button id="main-menu-play" type="button">Play Game</button>
         <button id="main-menu-survival" type="button">Survival Mode</button>
+        <button id="main-menu-settings" type="button">Settings</button>
         <button id="main-menu-help" type="button">How To Play</button>
         <button id="main-menu-save" type="button">Manage Save</button>
       </div>
     </div>
   </div>
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <div class="settings-content">
+      <p class="help-eyebrow">Quick Settings</p>
+      <h1 id="settings-title">Performance preset</h1>
+      <p class="settings-intro">Pick a profile that matches your device. The choice is saved for the next launch.</p>
+      <div class="settings-tabs" role="tablist" aria-label="Performance presets">
+        <button class="settings-tab" type="button" role="tab" data-preset="power_saver">Power Saver</button>
+        <button class="settings-tab" type="button" role="tab" data-preset="meh">Meh</button>
+        <button class="settings-tab" type="button" role="tab" data-preset="bea_u_tiful">Bea-u-tiful</button>
+      </div>
+      <div class="settings-panel" id="settings-panel"></div>
+      <div class="settings-actions">
+        <button id="settings-close" type="button">Close</button>
+      </div>
+    </div>
+  </dialog>
   <canvas id="game"></canvas>
   <button id="help-btn" type="button" aria-label="How to play" title="How to play (F1)">?</button>
   <button id="save-btn" type="button" aria-label="Manage save data" title="Manage save data">&#128190;</button>

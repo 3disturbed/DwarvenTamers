@@ -15,11 +15,15 @@ async function readJson(url) {
 export default class WorldManager {
   constructor(options = {}) {
     this.mode = options.mode || 'normal';
+    this.seed = options.seed ?? 42;
+    this.spawnOptions = {
+      horseSpawnChance: options.horseSpawnChance ?? 1,
+      chestSpawnChance: options.chestSpawnChance ?? 1,
+    };
     this.biomeIndex = null;
     this.biomeDataMap = new Map();
     this.chunkManager = null;
     this.generator = null;
-    this.seed = 42;
     this.saveInterval = null;
   }
 
@@ -47,7 +51,10 @@ export default class WorldManager {
     }
 
     // Initialize world generator
-    this.generator = new WorldGenerator(this.seed, this.biomeIndex, this.biomeDataMap, { mode: this.mode });
+    this.generator = new WorldGenerator(this.seed, this.biomeIndex, this.biomeDataMap, {
+      mode: this.mode,
+      spawnOptions: this.spawnOptions,
+    });
 
     // Initialize chunk store and manager
     const store = new ChunkStore(new URL('../../saves/chunks/', import.meta.url), this.mode);

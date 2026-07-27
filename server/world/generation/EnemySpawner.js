@@ -2,9 +2,10 @@ import { CHUNK_SIZE, TILE_SIZE } from '../../../shared/Constants.js';
 import { TILE, WATER_TILE_IDS } from '../../../shared/TileTypes.js';
 
 export default class EnemySpawner {
-  constructor(noiseGen, gradientResolver) {
+  constructor(noiseGen, gradientResolver, options = {}) {
     this.noise = noiseGen;
     this.gradient = gradientResolver;
+    this.spawnOptions = options.spawnOptions || {};
   }
 
   // Determine enemy spawn points for a chunk
@@ -41,7 +42,11 @@ export default class EnemySpawner {
             worldY + entry.id.charCodeAt(1) * 200
           );
 
-          if (this.gradient.shouldSpawn(gradient, entry, noiseVal)) {
+          const horseMultiplier = entry.isHorse ? (this.spawnOptions.horseSpawnChance ?? 1) : 1;
+          if (horseMultiplier <= 0) continue;
+
+          const density = this.gradient.getDensity(gradient, entry) * horseMultiplier;
+          if (noiseVal < density) {
             spawnPoints.push({
               enemyId: entry.id,
               x: worldX,
