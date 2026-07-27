@@ -32,6 +32,14 @@ const WALL_TILE_IDS = new Set([
   TILE.CLIFF,
 ]);
 
+const TREE_RESOURCE_IDS = new Set([
+  'wood_oak',
+  'wood_pine',
+  'wood_dark_oak',
+  'ancient_tree',
+  'frost_pine',
+]);
+
 export default class Billboard3DRenderer {
   constructor(hostCanvas) {
     this.hostCanvas = hostCanvas;
@@ -394,8 +402,11 @@ export default class Billboard3DRenderer {
       const drawSize = res.resourceId
         ? resourceSprites.getDrawSize(res.resourceId)
         : (res.size || 24);
+      const worldY = (res.resourceId && TREE_RESOURCE_IDS.has(res.resourceId))
+        ? res.y - drawSize * 0.5
+        : res.y;
       const texture = this._getTexture(sprite, `resource:${res.resourceId}`);
-      this._placeBillboard(texture, res.x, res.y, drawSize, 0, {
+      this._placeBillboard(texture, res.x, worldY, drawSize, 0, {
         shadowTexture: this.resourceShadowTexture,
         shadowY: 0.1,
         shadowOpacity: 0.72,
