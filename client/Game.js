@@ -47,7 +47,11 @@ import FishingMinigame from './ui/FishingMinigame.js';
 import PvPBattlePanel from './ui/PvPBattlePanel.js';
 import { LAND_PLOTS } from '../shared/LandPlotTypes.js';
 import { BIOME_NAMES } from '../shared/BiomeTypes.js';
+import { APP_STORAGE_PREFIX } from '../shared/AppConfig.js';
 import consumePointerAction from './input/consumePointerAction.js';
+
+const EXPLORED_STORAGE_SUFFIX = 'explored';
+const BIOME_STORAGE_SUFFIX = 'biomes';
 
 export default class Game {
   constructor(canvas) {
@@ -2995,7 +2999,7 @@ export default class Game {
 
   loadExploredChunks(playerId) {
     try {
-      const key = `soloheim:explored:${playerId}`;
+      const key = `${APP_STORAGE_PREFIX}${EXPLORED_STORAGE_SUFFIX}:${playerId}`;
       const legacyKey = `darkheim_explored_${playerId}`;
       const raw = localStorage.getItem(key) || localStorage.getItem(legacyKey);
       if (raw) {
@@ -3005,7 +3009,7 @@ export default class Game {
         }
       }
       // Also load biome cache
-      const biomeKey = `soloheim:biomes:${playerId}`;
+      const biomeKey = `${APP_STORAGE_PREFIX}${BIOME_STORAGE_SUFFIX}:${playerId}`;
       const legacyBiomeKey = `darkheim_biomes_${playerId}`;
       const biomeRaw = localStorage.getItem(biomeKey) || localStorage.getItem(legacyBiomeKey);
       if (biomeRaw) {
@@ -3025,10 +3029,10 @@ export default class Game {
     try {
       const playerId = this.localPlayer ? this.localPlayer.id : null;
       if (!playerId) return;
-      const key = `soloheim:explored:${playerId}`;
+      const key = `${APP_STORAGE_PREFIX}${EXPLORED_STORAGE_SUFFIX}:${playerId}`;
       localStorage.setItem(key, JSON.stringify([...this.exploredChunks]));
       // Also save biome cache
-      const biomeKey = `soloheim:biomes:${playerId}`;
+      const biomeKey = `${APP_STORAGE_PREFIX}${BIOME_STORAGE_SUFFIX}:${playerId}`;
       const obj = {};
       for (const [k, v] of this.biomeCache) {
         obj[k] = v;

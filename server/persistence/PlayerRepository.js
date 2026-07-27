@@ -1,4 +1,5 @@
 const SAVE_DIR = new URL('../../saves/players/', import.meta.url);
+import { APP_STORAGE_PREFIX } from '../../shared/AppConfig.js';
 
 export default class PlayerRepository {
   constructor() {
@@ -24,7 +25,7 @@ export default class PlayerRepository {
   }
 
   getStorageKey(playerId) {
-    return `soloheim:player:${playerId.replace(/[^a-zA-Z0-9-]/g, '')}`;
+    return `${APP_STORAGE_PREFIX}player:${playerId.replace(/[^a-zA-Z0-9-]/g, '')}`;
   }
 
   async exists(playerId) {

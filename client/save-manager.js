@@ -4,9 +4,15 @@ import {
   getBrowserEntries,
   replaceBrowserEntries,
 } from '../shared/BrowserDatabase.js';
+import {
+  APP_BACKUP_FILENAME_PREFIX,
+  APP_BACKUP_FORMAT,
+  APP_NAME,
+  APP_STORAGE_PREFIX,
+} from '../shared/AppConfig.js';
 
-const SAVE_PREFIX = 'soloheim:';
-const BACKUP_FORMAT = 'soloheim-save';
+const SAVE_PREFIX = APP_STORAGE_PREFIX;
+const BACKUP_FORMAT = APP_BACKUP_FORMAT;
 const BACKUP_VERSION = 2;
 
 export function createBackup(storage, now = new Date(), indexedData = { chunks: [] }) {
@@ -32,7 +38,7 @@ export async function createFullBackup(storage, now = new Date()) {
 
 export function validateBackup(value) {
   if (!value || value.format !== BACKUP_FORMAT || ![1, BACKUP_VERSION].includes(value.version)) {
-    throw new Error('This is not a supported SoloHiem backup.');
+    throw new Error(`This is not a supported ${APP_NAME} backup.`);
   }
   if (!value.data || typeof value.data !== 'object' || Array.isArray(value.data)) {
     throw new Error('The backup does not contain valid save data.');
@@ -139,7 +145,7 @@ export function initializeSaveManager() {
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `soloheim-backup-${backup.exportedAt.slice(0, 10)}.json`;
+    link.download = `${APP_BACKUP_FILENAME_PREFIX}-${backup.exportedAt.slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(link.href);
     const chunkCount = backup.indexedData.chunks.length;

@@ -1,4 +1,6 @@
-const SEEN_KEY = 'soloheim:onboarding-seen';
+import { APP_STORAGE_PREFIX } from '../shared/AppConfig.js';
+
+const SEEN_KEY = `${APP_STORAGE_PREFIX}onboarding-seen`;
 
 export function initializeOnboarding() {
   const dialog = document.getElementById('help-dialog');

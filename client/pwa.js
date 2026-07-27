@@ -1,3 +1,5 @@
+import { APP_NAME } from '../shared/AppConfig.js';
+
 let hideTimer = null;
 
 function showToast(message, actionLabel = null, action = null, persistent = false) {
@@ -34,7 +36,7 @@ export async function initializePwa() {
     const offerUpdate = (worker) => {
       if (!worker) return;
       showToast(
-        'A new SoloHiem version is ready.',
+        `A new ${APP_NAME} version is ready.`,
         'Update',
         () => worker.postMessage({ type: 'SKIP_WAITING' }),
         true,

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'soloheim-v26';
+const CACHE_NAME = 'dwarventamers-v1';
 const APP_SHELL = [
   './',
   './index.html',

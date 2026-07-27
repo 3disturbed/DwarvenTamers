@@ -3,6 +3,7 @@ import {
   getBrowserValue,
   setBrowserValue,
 } from '../../shared/BrowserDatabase.js';
+import { APP_STORAGE_PREFIX } from '../../shared/AppConfig.js';
 
 export default class ChunkStore {
   constructor(savePath) {
@@ -23,7 +24,7 @@ export default class ChunkStore {
   }
 
   getStorageKey(chunkX, chunkY) {
-    return `soloheim:chunk:${chunkX}:${chunkY}`;
+    return `${APP_STORAGE_PREFIX}chunk:${chunkX}:${chunkY}`;
   }
 
   async load(chunkX, chunkY) {

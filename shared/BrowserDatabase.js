@@ -1,4 +1,6 @@
-const DATABASE_NAME = 'soloheim';
+import { APP_DATABASE_NAME } from './AppConfig.js';
+
+const DATABASE_NAME = APP_DATABASE_NAME;
 const DATABASE_VERSION = 1;
 export const CHUNK_STORE = 'chunks';
 

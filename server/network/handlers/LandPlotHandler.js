@@ -1,11 +1,12 @@
 import { MSG } from '../../../shared/MessageTypes.js';
 import { LAND_PLOTS } from '../../../shared/LandPlotTypes.js';
+import { APP_STORAGE_PREFIX } from '../../../shared/AppConfig.js';
 import HealthComponent from '../../ecs/components/HealthComponent.js';
 import PlayerComponent from '../../ecs/components/PlayerComponent.js';
 import InventoryComponent from '../../ecs/components/InventoryComponent.js';
 
 const REGISTRY_PATH = new URL('../../../saves/land_registry.json', import.meta.url);
-const STORAGE_KEY = 'soloheim:land-registry';
+const STORAGE_KEY = `${APP_STORAGE_PREFIX}land-registry`;
 
 export default class LandPlotHandler {
   constructor(gameServer) {

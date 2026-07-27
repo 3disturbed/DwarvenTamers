@@ -1,6 +1,6 @@
 {
-  "name": "SoloHiem",
-  "short_name": "SoloHiem",
+  "name": "DwarvenTamers",
+  "short_name": "DwarvenTamers",
   "description": "A single-player survival crafting adventure that runs entirely in your browser.",
   "id": "./",
   "start_url": "./",

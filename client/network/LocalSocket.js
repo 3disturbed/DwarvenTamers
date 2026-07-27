@@ -1,5 +1,10 @@
 import GameServer from '../../server/GameServer.js';
 import PlayerConnection from '../../server/network/PlayerConnection.js';
+import {
+  APP_DEFAULT_PLAYER_NAME,
+  APP_NAME,
+  APP_PLAYER_ID,
+} from '../../shared/AppConfig.js';
 
 class LocalClientSocket {
   constructor(host) {
@@ -84,7 +89,7 @@ class LocalGameHost {
     try {
       await this.ready;
       const socket = new LocalServerSocket(client);
-      const player = new PlayerConnection(socket, 'solo-player', 'Adventurer', '#c9a84c');
+      const player = new PlayerConnection(socket, APP_PLAYER_ID, APP_DEFAULT_PLAYER_NAME, '#c9a84c');
       socket.player = player;
       client.serverSocket = socket;
       client.connected = true;
@@ -92,7 +97,7 @@ class LocalGameHost {
       client.receive('connect');
       await this.game.onPlayerJoin(player);
     } catch (error) {
-      console.error('[SoloHiem] Failed to start local game:', error);
+      console.error(`[${APP_NAME}] Failed to start local game:`, error);
       client.receive('connect_error', error);
     }
   }

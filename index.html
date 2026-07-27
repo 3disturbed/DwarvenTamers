@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
   <meta name="theme-color" content="#0a0a0f">
   <meta name="description" content="A single-player survival crafting adventure that runs entirely in your browser.">
-  <title>SoloHiem</title>
+  <title>DwarvenTamers</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <script type="importmap">
@@ -15,298 +15,11 @@
       }
     }
   </script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0f; }
-    canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-      touch-action: none;
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
-    }
-    #fullscreen-btn {
-      display: none;
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 100;
-      width: 44px;
-      height: 44px;
-      border: 2px solid rgba(255,255,255,0.4);
-      border-radius: 8px;
-      background: rgba(0,0,0,0.5);
-      color: #fff;
-      font-size: 20px;
-      line-height: 40px;
-      text-align: center;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-    #fullscreen-btn:active {
-      background: rgba(255,255,255,0.2);
-    }
-    #help-btn, #save-btn {
-      position: fixed;
-      top: 10px;
-      z-index: 100;
-      width: 44px;
-      height: 44px;
-      border: 2px solid rgba(255,255,255,0.35);
-      border-radius: 8px;
-      background: rgba(0,0,0,0.58);
-      color: #e8d48b;
-      font: 700 19px/40px system-ui, sans-serif;
-      text-align: center;
-      cursor: pointer;
-    }
-    #help-btn { left: 10px; }
-    #save-btn { left: 62px; }
-    #help-btn:hover, #save-btn:hover { background: rgba(201,168,76,0.2); }
-    #help-btn:focus-visible,
-    #save-btn:focus-visible,
-    dialog button:focus-visible {
-      outline: 2px solid #fff;
-      outline-offset: 2px;
-    }
-    #help-dialog {
-      width: min(760px, calc(100vw - 28px));
-      max-height: min(720px, calc(100vh - 28px));
-      padding: 0;
-      border: 1px solid rgba(201, 168, 76, 0.65);
-      border-radius: 16px;
-      background: linear-gradient(145deg, #171724, #0c0c13);
-      color: #ece8da;
-      box-shadow: 0 24px 90px rgba(0,0,0,0.75);
-      font-family: system-ui, sans-serif;
-    }
-    #help-dialog::backdrop {
-      background: rgba(3, 3, 8, 0.82);
-      backdrop-filter: blur(5px);
-    }
-    .help-content { padding: clamp(22px, 5vw, 42px); overflow: auto; }
-    .help-eyebrow {
-      margin: 0 0 4px;
-      color: #c9a84c;
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-    }
-    .help-content h1 {
-      margin: 0;
-      color: #f2dfaa;
-      font-family: Georgia, serif;
-      font-size: clamp(2rem, 7vw, 3.5rem);
-      line-height: 1;
-    }
-    .help-intro {
-      max-width: 58ch;
-      margin: 12px 0 24px;
-      color: #aaa8a1;
-      line-height: 1.55;
-    }
-    .help-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-    .help-card {
-      padding: 15px;
-      border: 1px solid rgba(255,255,255,0.09);
-      border-radius: 10px;
-      background: rgba(255,255,255,0.035);
-    }
-    .help-card h2 {
-      margin: 0 0 10px;
-      color: #e8d48b;
-      font-size: 0.92rem;
-    }
-    .help-card dl {
-      display: grid;
-      grid-template-columns: minmax(76px, auto) 1fr;
-      gap: 7px 12px;
-      margin: 0;
-      color: #bebbb1;
-      font-size: 0.8rem;
-    }
-    .help-card dt { color: #fff; font-weight: 700; }
-    .help-card dd { margin: 0; }
-    .help-tip {
-      margin: 16px 0 0;
-      padding-left: 12px;
-      border-left: 3px solid #c9a84c;
-      color: #aaa8a1;
-      font-size: 0.82rem;
-      line-height: 1.5;
-    }
-    .help-actions {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 24px;
-    }
-    #help-close {
-      min-width: 130px;
-      padding: 11px 18px;
-      border: 1px solid #c9a84c;
-      border-radius: 8px;
-      background: #c9a84c;
-      color: #111116;
-      font: 800 0.86rem system-ui, sans-serif;
-      cursor: pointer;
-    }
-    #help-close:hover { background: #e8d48b; }
-    #save-dialog {
-      width: min(560px, calc(100vw - 28px));
-      padding: 0;
-      border: 1px solid rgba(201, 168, 76, 0.65);
-      border-radius: 16px;
-      background: linear-gradient(145deg, #171724, #0c0c13);
-      color: #ece8da;
-      box-shadow: 0 24px 90px rgba(0,0,0,0.75);
-      font-family: system-ui, sans-serif;
-    }
-    #save-dialog::backdrop {
-      background: rgba(3, 3, 8, 0.82);
-      backdrop-filter: blur(5px);
-    }
-    .save-content { padding: clamp(22px, 5vw, 36px); }
-    .save-content h1 {
-      margin: 0;
-      color: #f2dfaa;
-      font: 700 clamp(1.8rem, 6vw, 2.7rem)/1 Georgia, serif;
-    }
-    .save-intro, #save-status {
-      color: #aaa8a1;
-      font-size: 0.86rem;
-      line-height: 1.5;
-    }
-    .save-options { display: grid; gap: 10px; margin: 20px 0; }
-    .save-option {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: center;
-      gap: 18px;
-      padding: 14px;
-      border: 1px solid rgba(255,255,255,0.09);
-      border-radius: 10px;
-      background: rgba(255,255,255,0.035);
-    }
-    .save-option strong { display: block; color: #e8d48b; font-size: 0.9rem; }
-    .save-option span { color: #888780; font-size: 0.75rem; }
-    .save-option button, #save-close {
-      padding: 9px 13px;
-      border: 1px solid #c9a84c;
-      border-radius: 7px;
-      background: transparent;
-      color: #e8d48b;
-      font: 750 0.78rem system-ui, sans-serif;
-      cursor: pointer;
-    }
-    .save-option button:hover, #save-close:hover { background: rgba(201,168,76,0.16); }
-    #save-reset.confirming {
-      border-color: #e74c3c;
-      background: #e74c3c;
-      color: white;
-    }
-    #save-status { min-height: 1.5em; margin: 0; }
-    #save-status.error { color: #ff8f87; }
-    #save-status.success { color: #7ee2a8; }
-    .save-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
-    @media (max-width: 620px) {
-      .help-grid { grid-template-columns: 1fr; }
-      .help-content { padding: 22px 18px; }
-      #help-dialog { max-height: calc(100vh - 16px); }
-    }
-    #splash {
-      position: fixed;
-      inset: 0;
-      z-index: 999;
-      background: #0a0a0f;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      transition: opacity 0.6s ease;
-    }
-    #splash.fade-out {
-      opacity: 0;
-      pointer-events: none;
-    }
-    #splash img {
-      max-width: min(480px, 85vw);
-      height: auto;
-    }
-    #splash .loading-bar-track {
-      width: min(320px, 60vw);
-      height: 6px;
-      background: #1a1a2e;
-      border-radius: 3px;
-      margin-top: 32px;
-      overflow: hidden;
-    }
-    #splash .loading-bar-fill {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, #c9a84c, #e8d48b);
-      border-radius: 3px;
-      transition: width 0.3s ease;
-    }
-    #splash .loading-text {
-      margin-top: 14px;
-      color: #666;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      font-size: 0.8rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-    }
-    #system-toast {
-      position: fixed;
-      left: 50%;
-      bottom: 24px;
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      max-width: min(520px, calc(100vw - 32px));
-      padding: 12px 14px;
-      border: 1px solid rgba(201, 168, 76, 0.55);
-      border-radius: 10px;
-      background: rgba(10, 10, 15, 0.94);
-      color: #e8d48b;
-      font: 600 13px/1.35 system-ui, sans-serif;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
-      transform: translate(-50%, calc(100% + 48px));
-      opacity: 0;
-      transition: transform 180ms ease, opacity 180ms ease;
-      pointer-events: none;
-    }
-    #system-toast.visible {
-      transform: translate(-50%, 0);
-      opacity: 1;
-      pointer-events: auto;
-    }
-    #system-toast button {
-      flex: none;
-      padding: 7px 11px;
-      border: 1px solid #c9a84c;
-      border-radius: 6px;
-      background: #c9a84c;
-      color: #111116;
-      font: inherit;
-      cursor: pointer;
-    }
-    #system-toast button:hover { background: #e8d48b; }
-    #system-toast button:focus-visible {
-      outline: 2px solid #fff;
-      outline-offset: 2px;
-    }
-  </style>
+  <link rel="stylesheet" href="./index.css">
 </head>
 <body>
   <div id="splash">
-    <img src="./client/NordFolkLogo.png" alt="SoloHiem">
+    <img src="./client/NordFolkLogo.png" alt="DwarvenTamers">
     <div class="loading-bar-track">
       <div class="loading-bar-fill" id="splash-bar"></div>
     </div>
@@ -319,7 +32,7 @@
   <dialog id="help-dialog" aria-labelledby="help-title">
     <div class="help-content">
       <p class="help-eyebrow">Field Guide</p>
-      <h1 id="help-title">Welcome to SoloHiem</h1>
+      <h1 id="help-title">Welcome to DwarvenTamers</h1>
       <p class="help-intro">
         Gather, craft, explore, and grow stronger in a world saved privately on
         this device. Start near town, speak with its folk, and prepare before
@@ -381,7 +94,7 @@
       <p class="help-eyebrow">Local Progress</p>
       <h1 id="save-title">Save data</h1>
       <p class="save-intro">
-        SoloHiem saves on this device. Download a backup before clearing browser
+        DwarvenTamers saves on this device. Download a backup before clearing browser
         data or moving to another device.
       </p>
       <div class="save-options">
@@ -395,7 +108,7 @@
           <input id="save-file" type="file" accept="application/json,.json" hidden>
         </div>
         <div class="save-option">
-          <div><strong>Start over</strong><span>Permanently remove local SoloHiem progress.</span></div>
+          <div><strong>Start over</strong><span>Permanently remove local DwarvenTamers progress.</span></div>
           <button id="save-reset" type="button">Reset</button>
         </div>
       </div>
