@@ -293,11 +293,7 @@ export default class ClientChunk {
   renderResources(ctx) {
     for (const r of this.resources) {
       if (r.depleted) continue;
-      const sprite = r.id ? resourceSprites.get(r.id) : null;
-      if (sprite) {
-        const S = 64;
-        ctx.drawImage(sprite, Math.round(r.x - S / 2), Math.round(r.y - S + S / 2), S, S);
-      } else {
+      if (!r.id || !resourceSprites.draw(ctx, r.id, r.x, r.y, 64)) {
         const half = r.size / 2;
         ctx.fillStyle = r.color;
         ctx.fillRect(Math.round(r.x - half), Math.round(r.y - half), r.size, r.size);

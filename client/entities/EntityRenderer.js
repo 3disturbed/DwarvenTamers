@@ -133,13 +133,10 @@ export default class EntityRenderer {
     const ctx = r.ctx;
 
     // Try sprite first — 64x64, centered horizontally, base aligned to collider
-    const sprite = resourceId ? resourceSprites.get(resourceId) : null;
     let topY;
-    if (sprite) {
+    if (resourceId && resourceSprites.draw(ctx, resourceId, x, y, 64)) {
       const S = 64;
-      const drawX = Math.round(x - S / 2);
       const drawY = Math.round(y - S + S / 2); // offset up 1 tile so base sits at collider y
-      ctx.drawImage(sprite, drawX, drawY, S, S);
       topY = drawY;
     } else {
       // Fallback: colored circle
