@@ -7,9 +7,9 @@ import stationSprites from '../entities/StationSprites.js';
 
 const MAX_PIXEL_RATIO = 2;
 const CAMERA_FOV = 58;
-const CAMERA_SIDE_OFFSET = 1.2;
-const CAMERA_FORWARD_OFFSET = 1.38;
-const CAMERA_HEIGHT = 0.33;
+const CAMERA_SIDE_OFFSET = 0;
+const CAMERA_FORWARD_OFFSET = 1.32;
+const CAMERA_HEIGHT = 0.56;
 const CAMERA_LOOK_Y = 18;
 const CAMERA_FOLLOW_DAMPING = 0.12;
 const CAMERA_POSITION_DAMPING = 0.1;
