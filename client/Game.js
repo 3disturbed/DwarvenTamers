@@ -64,6 +64,7 @@ export default class Game {
       use3d: true,
       maxPixelRatio: 1.5,
     };
+    this.performanceOptions.use3d = true;
     this.renderer = new Renderer(canvas);
     this.billboard3d = new Billboard3DRenderer(canvas, this.performanceOptions);
     this.camera = new Camera();
@@ -2193,67 +2194,49 @@ export default class Game {
   render(interpolation) {
     const r = this.renderer;
     const ctx = r.ctx;
-    const use3d = !!(this.performanceOptions.use3d && this.billboard3d?.enabled);
+    const use3d = !!this.billboard3d?.enabled;
 
     r.clear();
 
-    if (!use3d) {
-      // World-space rendering (original 2D path)
-      r.beginCamera(this.camera);
-      this.renderWorld(r);
-      this.renderLandPlots(r);
-      this.renderResources(r);
-      this.renderStations(r);
-      this.renderNPCs(r);
-      this.renderWildHorses(r);
-      this.renderPlacementGhost(r);
-      this.renderDamageZones(r);
-      this.renderEnemies(r);
-      this.renderProjectiles(r);
-      this.particles.render(ctx);
-      this.renderPlayers(r);
-      this.renderFishingBobber(r);
-      this.damageNumbers.render(ctx, r.uiScale);
-      r.endCamera();
-    } else {
-      // First pass: bake visible terrain into a 3D ground plane texture.
-      this.billboard3d.updateGround(this.camera, (groundCtx, viewW, viewH) => {
-        this.worldManager.render(groundCtx, this.camera, viewW, viewH, this.resources, { terrainOnly: true });
-      });
+    if (!use3d) return;
 
-      // Second pass: entities as lit 3D billboards over that 3D ground.
-      const facing = this.getFacingOffset();
-      const actions = this.input.actions;
-      const localMoving = actions.moveX !== 0 || actions.moveY !== 0;
-      this.billboard3d.beginFrame(this.camera);
-      this.billboard3d.render({
-        localPlayer: this.localPlayer,
-        remotePlayers: this.remotePlayers,
-        enemies: this.enemies,
-        resources: this.resources,
-        stations: this.stations,
-        npcs: this.npcs,
-        chunks: this.worldManager.chunks,
-        hasHorse: this.hasHorse,
-        mounted: this.mounted,
-        followHorse: this.followHorse,
-        localMoving,
-        localFacingRight: facing.x > 0,
-        detailMode: this.performanceOptions.renderDetail,
-      });
-      this.billboard3d.composite(ctx, r.width, r.height);
+    // First pass: bake visible terrain into a 3D ground plane texture.
+    this.billboard3d.updateGround(this.camera, (groundCtx, viewW, viewH) => {
+      this.worldManager.render(groundCtx, this.camera, viewW, viewH, this.resources, { terrainOnly: true });
+    });
 
-      // Third pass: keep world-space effects/hints over the 3D layer.
-      r.beginCamera(this.camera);
-      this.renderLandPlots(r);
-      this.renderPlacementGhost(r);
-      this.renderDamageZones(r);
-      this.renderProjectiles(r);
-      this.particles.render(ctx);
-      this.renderFishingBobber(r);
-      this.damageNumbers.render(ctx, r.uiScale);
-      r.endCamera();
-    }
+    // Second pass: entities as lit 3D billboards over that 3D ground.
+    const facing = this.getFacingOffset();
+    const actions = this.input.actions;
+    const localMoving = actions.moveX !== 0 || actions.moveY !== 0;
+    this.billboard3d.beginFrame(this.camera);
+    this.billboard3d.render({
+      localPlayer: this.localPlayer,
+      remotePlayers: this.remotePlayers,
+      enemies: this.enemies,
+      resources: this.resources,
+      stations: this.stations,
+      npcs: this.npcs,
+      chunks: this.worldManager.chunks,
+      hasHorse: this.hasHorse,
+      mounted: this.mounted,
+      followHorse: this.followHorse,
+      localMoving,
+      localFacingRight: facing.x > 0,
+      detailMode: this.performanceOptions.renderDetail,
+    });
+    this.billboard3d.composite(ctx, r.width, r.height);
+
+    // Third pass: keep world-space effects/hints over the 3D layer.
+    r.beginCamera(this.camera);
+    this.renderLandPlots(r);
+    this.renderPlacementGhost(r);
+    this.renderDamageZones(r);
+    this.renderProjectiles(r);
+    this.particles.render(ctx);
+    this.renderFishingBobber(r);
+    this.damageNumbers.render(ctx, r.uiScale);
+    r.endCamera();
 
     // Screen-space UI (scaled)
     r.beginUI();

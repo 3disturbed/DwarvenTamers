@@ -30,9 +30,9 @@ const PERFORMANCE_PRESETS = {
     label: 'Power Saver',
     frameRateCap: 30,
     renderDetail: 'low',
-    use3d: false,
+    use3d: true,
     maxPixelRatio: 1,
-    notes: 'Lowest load. Uses the 2D renderer and a 30 FPS cap.',
+    notes: 'Lowest load. Uses the 3D renderer with a 30 FPS cap.',
   },
   meh: {
     id: 'meh',
@@ -171,7 +171,7 @@ function startGame() {
       <p>${preset.notes}</p>
       <dl>
         <dt>Frame cap</dt><dd>${preset.frameRateCap} FPS</dd>
-        <dt>Renderer</dt><dd>${preset.use3d ? '3D' : '2D'}</dd>
+        <dt>Renderer</dt><dd>3D</dd>
         <dt>Detail</dt><dd>${preset.renderDetail}</dd>
       </dl>
     `;
