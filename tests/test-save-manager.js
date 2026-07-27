@@ -30,6 +30,7 @@ const storage = new MemoryStorage({
 const backup = createBackup(storage, new Date('2026-07-27T12:00:00Z'));
 assert(Object.keys(backup.data).length === 2, 'export includes only SoloHiem data');
 assert(backup.exportedAt === '2026-07-27T12:00:00.000Z', 'export timestamp is stable');
+assert(Array.isArray(backup.indexedData.chunks), 'export contains indexed world data');
 assert(validateBackup(backup) === backup, 'valid backup is accepted');
 
 const restored = new MemoryStorage({ 'soloheim:old': '{}', unrelated: 'keep me' });
@@ -40,11 +41,24 @@ assert(restored.getItem('unrelated') === 'keep me', 'restore preserves unrelated
 
 let invalidRejected = false;
 try {
-  validateBackup({ format: 'soloheim-save', version: 1, data: { evil: '{}' } });
+  validateBackup({ format: 'soloheim-save', version: 2, data: { evil: '{}' }, indexedData: { chunks: [] } });
 } catch {
   invalidRejected = true;
 }
 assert(invalidRejected, 'restore rejects entries outside the SoloHiem namespace');
+
+let invalidWorldRejected = false;
+try {
+  validateBackup({
+    format: 'soloheim-save',
+    version: 2,
+    data: {},
+    indexedData: { chunks: [['0,0']] },
+  });
+} catch {
+  invalidWorldRejected = true;
+}
+assert(invalidWorldRejected, 'restore rejects malformed world chunks');
 
 clearSaveData(restored);
 assert(restored.getItem('soloheim:player:solo-player') === null, 'reset clears SoloHiem data');

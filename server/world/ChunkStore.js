@@ -1,3 +1,9 @@
+import {
+  CHUNK_STORE,
+  getBrowserValue,
+  setBrowserValue,
+} from '../../shared/BrowserDatabase.js';
+
 export default class ChunkStore {
   constructor(savePath) {
     this.savePath = savePath;
@@ -22,8 +28,18 @@ export default class ChunkStore {
 
   async load(chunkX, chunkY) {
     if (typeof window !== 'undefined') {
-      const raw = localStorage.getItem(this.getStorageKey(chunkX, chunkY));
-      return raw ? JSON.parse(raw) : null;
+      const key = `${chunkX},${chunkY}`;
+      const stored = await getBrowserValue(CHUNK_STORE, key);
+      if (stored) return stored;
+
+      // One-time migration from the original localStorage chunk format.
+      const legacyKey = this.getStorageKey(chunkX, chunkY);
+      const raw = localStorage.getItem(legacyKey);
+      if (!raw) return null;
+      const chunk = JSON.parse(raw);
+      await setBrowserValue(CHUNK_STORE, key, chunk);
+      localStorage.removeItem(legacyKey);
+      return chunk;
     }
     const filePath = this.getFilePath(chunkX, chunkY);
     try {
@@ -39,9 +55,10 @@ export default class ChunkStore {
   async save(chunkData) {
     if (!this.ready) return;
     if (typeof window !== 'undefined') {
-      localStorage.setItem(
-        this.getStorageKey(chunkData.chunkX, chunkData.chunkY),
-        JSON.stringify(chunkData),
+      await setBrowserValue(
+        CHUNK_STORE,
+        `${chunkData.chunkX},${chunkData.chunkY}`,
+        chunkData,
       );
       return;
     }
@@ -56,6 +73,8 @@ export default class ChunkStore {
 
   async exists(chunkX, chunkY) {
     if (typeof window !== 'undefined') {
+      const key = `${chunkX},${chunkY}`;
+      if (await getBrowserValue(CHUNK_STORE, key)) return true;
       return localStorage.getItem(this.getStorageKey(chunkX, chunkY)) !== null;
     }
     const { access } = await import('node:fs/promises');

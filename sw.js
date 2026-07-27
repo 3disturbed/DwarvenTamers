@@ -1,4 +1,4 @@
-const CACHE_NAME = 'soloheim-v3';
+const CACHE_NAME = 'soloheim-v4';
 const APP_SHELL = [
   './',
   './index.html',
@@ -8,6 +8,7 @@ const APP_SHELL = [
   './client/pwa.js',
   './client/onboarding.js',
   './client/save-manager.js',
+  './shared/BrowserDatabase.js',
   './client/NordFolkLogo.png',
 ];
 

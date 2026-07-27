@@ -27,6 +27,7 @@ assert(html.includes('id="help-dialog"'), 'first-run guide is present');
 assert(worker.includes("'./client/onboarding.js'"), 'first-run guide works offline');
 assert(html.includes('id="save-dialog"'), 'save data center is present');
 assert(worker.includes("'./client/save-manager.js'"), 'save data center works offline');
+assert(worker.includes("'./shared/BrowserDatabase.js'"), 'scalable world storage works offline');
 
 for (const path of [
   '../index.html',
@@ -37,6 +38,7 @@ for (const path of [
   '../client/pwa.js',
   '../client/onboarding.js',
   '../client/save-manager.js',
+  '../shared/BrowserDatabase.js',
   '../.nojekyll',
 ]) {
   await access(new URL(path, import.meta.url));

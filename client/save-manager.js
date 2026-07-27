@@ -1,8 +1,15 @@
+import {
+  CHUNK_STORE,
+  clearBrowserStore,
+  getBrowserEntries,
+  replaceBrowserEntries,
+} from '../shared/BrowserDatabase.js';
+
 const SAVE_PREFIX = 'soloheim:';
 const BACKUP_FORMAT = 'soloheim-save';
-const BACKUP_VERSION = 1;
+const BACKUP_VERSION = 2;
 
-export function createBackup(storage, now = new Date()) {
+export function createBackup(storage, now = new Date(), indexedData = { chunks: [] }) {
   const data = {};
   for (let index = 0; index < storage.length; index++) {
     const key = storage.key(index);
@@ -13,11 +20,18 @@ export function createBackup(storage, now = new Date()) {
     version: BACKUP_VERSION,
     exportedAt: now.toISOString(),
     data,
+    indexedData,
   };
 }
 
+export async function createFullBackup(storage, now = new Date()) {
+  return createBackup(storage, now, {
+    chunks: await getBrowserEntries(CHUNK_STORE),
+  });
+}
+
 export function validateBackup(value) {
-  if (!value || value.format !== BACKUP_FORMAT || value.version !== BACKUP_VERSION) {
+  if (!value || value.format !== BACKUP_FORMAT || ![1, BACKUP_VERSION].includes(value.version)) {
     throw new Error('This is not a supported SoloHiem backup.');
   }
   if (!value.data || typeof value.data !== 'object' || Array.isArray(value.data)) {
@@ -29,6 +43,13 @@ export function validateBackup(value) {
     }
     // All current save values are JSON; parsing catches truncated exports.
     JSON.parse(storedValue);
+  }
+  if (value.indexedData !== undefined) {
+    const chunks = value.indexedData?.chunks;
+    if (!Array.isArray(chunks) || chunks.some(entry =>
+      !Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== 'string')) {
+      throw new Error('The backup contains invalid world data.');
+    }
   }
   return value;
 }
@@ -53,6 +74,25 @@ export function clearSaveData(storage) {
     if (key?.startsWith(SAVE_PREFIX)) keys.push(key);
   }
   for (const key of keys) storage.removeItem(key);
+}
+
+export async function replaceFullSaveData(storage, backup) {
+  validateBackup(backup);
+  const previousLocal = createBackup(storage);
+  const previousChunks = await getBrowserEntries(CHUNK_STORE);
+  try {
+    replaceSaveData(storage, backup);
+    await replaceBrowserEntries(CHUNK_STORE, backup.indexedData?.chunks || []);
+  } catch (error) {
+    replaceSaveData(storage, previousLocal);
+    await replaceBrowserEntries(CHUNK_STORE, previousChunks);
+    throw error;
+  }
+}
+
+export async function clearFullSaveData(storage) {
+  await clearBrowserStore(CHUNK_STORE);
+  clearSaveData(storage);
 }
 
 export function initializeSaveManager() {
@@ -94,15 +134,16 @@ export function initializeSaveManager() {
     close();
   });
 
-  exportButton.addEventListener('click', () => {
-    const backup = createBackup(localStorage);
+  exportButton.addEventListener('click', async () => {
+    const backup = await createFullBackup(localStorage);
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `soloheim-backup-${backup.exportedAt.slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(link.href);
-    setStatus(`Backup ready — ${Object.keys(backup.data).length} save entries exported.`, 'success');
+    const chunkCount = backup.indexedData.chunks.length;
+    setStatus(`Backup ready — ${chunkCount} world chunks included.`, 'success');
   });
 
   importButton.addEventListener('click', () => fileInput.click());
@@ -112,7 +153,7 @@ export function initializeSaveManager() {
     if (!file) return;
     try {
       const backup = validateBackup(JSON.parse(await file.text()));
-      replaceSaveData(localStorage, backup);
+      await replaceFullSaveData(localStorage, backup);
       setStatus('Backup restored. Reloading your adventure…', 'success');
       window.setTimeout(() => window.location.reload(), 700);
     } catch (error) {
@@ -120,7 +161,7 @@ export function initializeSaveManager() {
     }
   });
 
-  resetButton.addEventListener('click', () => {
+  resetButton.addEventListener('click', async () => {
     if (!resetButton.classList.contains('confirming')) {
       resetButton.textContent = 'Confirm reset';
       resetButton.classList.add('confirming');
@@ -132,7 +173,7 @@ export function initializeSaveManager() {
       return;
     }
     cancelReset();
-    clearSaveData(localStorage);
+    await clearFullSaveData(localStorage);
     setStatus('Progress cleared. Reloading…', 'success');
     window.setTimeout(() => window.location.reload(), 500);
   });
