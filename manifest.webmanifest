@@ -1,0 +1,20 @@
+{
+  "name": "SoloHiem",
+  "short_name": "SoloHiem",
+  "description": "A single-player survival crafting adventure that runs entirely in your browser.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

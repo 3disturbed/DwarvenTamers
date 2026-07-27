@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="description" content="A single-player survival crafting adventure that runs entirely in your browser.">
   <title>SoloHiem</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <script type="importmap">
     {
       "imports": {
@@ -85,6 +89,47 @@
       letter-spacing: 0.15em;
       text-transform: uppercase;
     }
+    #system-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      max-width: min(520px, calc(100vw - 32px));
+      padding: 12px 14px;
+      border: 1px solid rgba(201, 168, 76, 0.55);
+      border-radius: 10px;
+      background: rgba(10, 10, 15, 0.94);
+      color: #e8d48b;
+      font: 600 13px/1.35 system-ui, sans-serif;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+      transform: translate(-50%, calc(100% + 48px));
+      opacity: 0;
+      transition: transform 180ms ease, opacity 180ms ease;
+      pointer-events: none;
+    }
+    #system-toast.visible {
+      transform: translate(-50%, 0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #system-toast button {
+      flex: none;
+      padding: 7px 11px;
+      border: 1px solid #c9a84c;
+      border-radius: 6px;
+      background: #c9a84c;
+      color: #111116;
+      font: inherit;
+      cursor: pointer;
+    }
+    #system-toast button:hover { background: #e8d48b; }
+    #system-toast button:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 2px;
+    }
   </style>
 </head>
 <body>
@@ -97,6 +142,10 @@
   </div>
   <canvas id="game"></canvas>
   <button id="fullscreen-btn" aria-label="Fullscreen">&#x26F6;</button>
+  <div id="system-toast" role="status" aria-live="polite">
+    <span id="system-toast-message"></span>
+    <button id="system-toast-action" type="button" hidden></button>
+  </div>
   <script type="module" src="./client/main.js"></script>
 </body>
 </html>
