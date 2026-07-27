@@ -25,6 +25,8 @@ assert(worker.includes("'./index.html'"), 'service worker precaches the offline 
 assert(worker.includes("url.hostname === 'cdn.jsdelivr.net'"), 'service worker caches the noise module dependency');
 assert(html.includes('id="help-dialog"'), 'first-run guide is present');
 assert(worker.includes("'./client/onboarding.js'"), 'first-run guide works offline');
+assert(html.includes('id="save-dialog"'), 'save data center is present');
+assert(worker.includes("'./client/save-manager.js'"), 'save data center works offline');
 
 for (const path of [
   '../index.html',
@@ -34,6 +36,7 @@ for (const path of [
   '../client/main.js',
   '../client/pwa.js',
   '../client/onboarding.js',
+  '../client/save-manager.js',
 ]) {
   await access(new URL(path, import.meta.url));
 }

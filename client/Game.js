@@ -877,7 +877,7 @@ export default class Game {
 
     // Native help dialog owns all input while open. The simulation continues,
     // but the character cannot move, attack, or trigger hidden panels.
-    if (document.getElementById('help-dialog')?.open) {
+    if (document.querySelector('dialog[open]')) {
       actions.reset();
     }
 

@@ -47,10 +47,9 @@
     #fullscreen-btn:active {
       background: rgba(255,255,255,0.2);
     }
-    #help-btn {
+    #help-btn, #save-btn {
       position: fixed;
       top: 10px;
-      left: 10px;
       z-index: 100;
       width: 44px;
       height: 44px;
@@ -62,9 +61,12 @@
       text-align: center;
       cursor: pointer;
     }
-    #help-btn:hover { background: rgba(201,168,76,0.2); }
+    #help-btn { left: 10px; }
+    #save-btn { left: 62px; }
+    #help-btn:hover, #save-btn:hover { background: rgba(201,168,76,0.2); }
     #help-btn:focus-visible,
-    #help-dialog button:focus-visible {
+    #save-btn:focus-visible,
+    dialog button:focus-visible {
       outline: 2px solid #fff;
       outline-offset: 2px;
     }
@@ -155,6 +157,63 @@
       cursor: pointer;
     }
     #help-close:hover { background: #e8d48b; }
+    #save-dialog {
+      width: min(560px, calc(100vw - 28px));
+      padding: 0;
+      border: 1px solid rgba(201, 168, 76, 0.65);
+      border-radius: 16px;
+      background: linear-gradient(145deg, #171724, #0c0c13);
+      color: #ece8da;
+      box-shadow: 0 24px 90px rgba(0,0,0,0.75);
+      font-family: system-ui, sans-serif;
+    }
+    #save-dialog::backdrop {
+      background: rgba(3, 3, 8, 0.82);
+      backdrop-filter: blur(5px);
+    }
+    .save-content { padding: clamp(22px, 5vw, 36px); }
+    .save-content h1 {
+      margin: 0;
+      color: #f2dfaa;
+      font: 700 clamp(1.8rem, 6vw, 2.7rem)/1 Georgia, serif;
+    }
+    .save-intro, #save-status {
+      color: #aaa8a1;
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+    .save-options { display: grid; gap: 10px; margin: 20px 0; }
+    .save-option {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 18px;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.035);
+    }
+    .save-option strong { display: block; color: #e8d48b; font-size: 0.9rem; }
+    .save-option span { color: #888780; font-size: 0.75rem; }
+    .save-option button, #save-close {
+      padding: 9px 13px;
+      border: 1px solid #c9a84c;
+      border-radius: 7px;
+      background: transparent;
+      color: #e8d48b;
+      font: 750 0.78rem system-ui, sans-serif;
+      cursor: pointer;
+    }
+    .save-option button:hover, #save-close:hover { background: rgba(201,168,76,0.16); }
+    #save-reset.confirming {
+      border-color: #e74c3c;
+      background: #e74c3c;
+      color: white;
+    }
+    #save-status { min-height: 1.5em; margin: 0; }
+    #save-status.error { color: #ff8f87; }
+    #save-status.success { color: #7ee2a8; }
+    .save-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
     @media (max-width: 620px) {
       .help-grid { grid-template-columns: 1fr; }
       .help-content { padding: 22px 18px; }
@@ -255,6 +314,7 @@
   </div>
   <canvas id="game"></canvas>
   <button id="help-btn" type="button" aria-label="How to play" title="How to play (F1)">?</button>
+  <button id="save-btn" type="button" aria-label="Manage save data" title="Manage save data">&#128190;</button>
   <button id="fullscreen-btn" aria-label="Fullscreen">&#x26F6;</button>
   <dialog id="help-dialog" aria-labelledby="help-title">
     <div class="help-content">
@@ -314,6 +374,33 @@
       <div class="help-actions">
         <button id="help-close" type="button">Begin adventure</button>
       </div>
+    </div>
+  </dialog>
+  <dialog id="save-dialog" aria-labelledby="save-title">
+    <div class="save-content">
+      <p class="help-eyebrow">Local Progress</p>
+      <h1 id="save-title">Save data</h1>
+      <p class="save-intro">
+        SoloHiem saves on this device. Download a backup before clearing browser
+        data or moving to another device.
+      </p>
+      <div class="save-options">
+        <div class="save-option">
+          <div><strong>Download backup</strong><span>Export all character and world progress.</span></div>
+          <button id="save-export" type="button">Download</button>
+        </div>
+        <div class="save-option">
+          <div><strong>Restore backup</strong><span>Validate and replace this device’s progress.</span></div>
+          <button id="save-import" type="button">Choose file</button>
+          <input id="save-file" type="file" accept="application/json,.json" hidden>
+        </div>
+        <div class="save-option">
+          <div><strong>Start over</strong><span>Permanently remove local SoloHiem progress.</span></div>
+          <button id="save-reset" type="button">Reset</button>
+        </div>
+      </div>
+      <p id="save-status" role="status" aria-live="polite"></p>
+      <div class="save-actions"><button id="save-close" type="button">Close</button></div>
     </div>
   </dialog>
   <div id="system-toast" role="status" aria-live="polite">
