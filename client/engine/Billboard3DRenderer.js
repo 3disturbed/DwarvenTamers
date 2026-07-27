@@ -20,6 +20,7 @@ const CAMERA_FOLLOW_DAMPING = 1;
 const CAMERA_POSITION_DAMPING = 1;
 const DAY_CYCLE_MS = 120000;
 const GROUND_OVERSCAN = 1.8;
+const BILLBOARD_PITCH_DEG = 33;
 const MAX_WALL_INSTANCES = 12000;
 const WALL_BASE_HEIGHT = TILE_SIZE * 0.75;
 const SUN_NORTH_OFFSET_Z = -320;
@@ -468,8 +469,8 @@ export default class Billboard3DRenderer {
     mesh.scale.set(size, size, 1);
     mesh.position.set(worldX, (size * 0.46) + liftY, worldY);
 
-    // Keep sprites fixed to world axes (X/Y upright), no camera-facing yaw.
-    mesh.rotation.set(0, 0, 0);
+    // Keep a fixed billboard pitch and locked yaw.
+    mesh.rotation.set((BILLBOARD_PITCH_DEG * Math.PI) / 180, 0, 0);
     mesh.material.opacity = 1;
 
     this._placeShadow(worldX, worldY, size, liftY, shadowOptions);
