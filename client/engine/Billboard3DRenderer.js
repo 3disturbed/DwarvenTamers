@@ -15,7 +15,7 @@ const CAMERA_LOOK_Y = 18;
 export default class Billboard3DRenderer {
   constructor(hostCanvas) {
     this.hostCanvas = hostCanvas;
-    this.enabled = typeof WebGL2RenderingContext !== 'undefined';
+    this.enabled = this._hasWebglSupport();
     this.textureCache = new Map();
     this.pool = [];
     this.activeCount = 0;
@@ -52,6 +52,17 @@ export default class Billboard3DRenderer {
     this.lastSize = { w: 0, h: 0, dpr: 1 };
     this._resizeFromHost();
     window.addEventListener('resize', () => this._resizeFromHost());
+  }
+
+  _hasWebglSupport() {
+    try {
+      const probe = document.createElement('canvas');
+      const gl2 = probe.getContext('webgl2');
+      const gl = probe.getContext('webgl') || probe.getContext('experimental-webgl');
+      return !!(gl2 || gl);
+    } catch {
+      return false;
+    }
   }
 
   _resizeFromHost() {
