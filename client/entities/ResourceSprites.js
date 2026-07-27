@@ -1,4 +1,4 @@
-const RESOURCE_IDS = [
+export const RESOURCE_IDS = [
   // Meadow
   'stick_pile', 'loose_stone', 'wood_oak', 'stone_node', 'copper_node',
   'berry_bush', 'flax_plant', 'cave_copper_vein', 'cave_tin_vein',

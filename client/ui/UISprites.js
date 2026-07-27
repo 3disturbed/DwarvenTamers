@@ -1,4 +1,4 @@
-const UI_ICON_IDS = [
+export const UI_ICON_IDS = [
   'action', 'interact', 'cancel', 'inventory', 'dash',
   'questLog', 'skills', 'map', 'petTeam', 'horseAction',
   'tabCharacter', 'characterSilhouette',

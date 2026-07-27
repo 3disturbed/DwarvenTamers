@@ -1,4 +1,4 @@
-const NPC_TYPES = ['quest_giver', 'vendor', 'guard', 'citizen'];
+export const NPC_TYPES = ['quest_giver', 'vendor', 'guard', 'citizen'];
 
 class NPCSprites {
   constructor() {

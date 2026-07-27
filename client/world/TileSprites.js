@@ -2,7 +2,7 @@ import { TILE } from '../../shared/TileTypes.js';
 import { TILE_SIZE } from '../../shared/Constants.js';
 
 // Map tile ID → sprite filename (without extension)
-const TILE_SPRITE_NAMES = {
+export const TILE_SPRITE_NAMES = {
   [TILE.GRASS]:        'grass',
   [TILE.DIRT]:         'dirt',
   [TILE.SAND]:         'sand',

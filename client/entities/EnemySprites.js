@@ -14,7 +14,7 @@ export const ANIMATED_SPRITES = {
   wild_horse: { frames: 3, frameWidth: 32, frameHeight: 32 },
 };
 
-const ENEMY_IDS = [
+export const ENEMY_IDS = [
   // Meadow
   'greyling', 'boar', 'meadow_skeleton', 'bramblethorn', 'cave_bat', 'cave_spider', 'rabbit',
   // Dark Forest
