@@ -6,8 +6,9 @@ import {
 import { APP_STORAGE_PREFIX } from '../../shared/AppConfig.js';
 
 export default class ChunkStore {
-  constructor(savePath) {
+  constructor(savePath, mode = 'normal') {
     this.savePath = savePath;
+    this.mode = mode;
     this.ready = false;
   }
 
@@ -20,16 +21,16 @@ export default class ChunkStore {
   }
 
   getFilePath(chunkX, chunkY) {
-    return new URL(`chunk_${chunkX}_${chunkY}.json`, this.savePath);
+    return new URL(`./${this.mode}/chunk_${chunkX}_${chunkY}.json`, this.savePath);
   }
 
   getStorageKey(chunkX, chunkY) {
-    return `${APP_STORAGE_PREFIX}chunk:${chunkX}:${chunkY}`;
+    return `${APP_STORAGE_PREFIX}chunk:${this.mode}:${chunkX}:${chunkY}`;
   }
 
   async load(chunkX, chunkY) {
     if (typeof window !== 'undefined') {
-      const key = `${chunkX},${chunkY}`;
+      const key = `${this.mode}:${chunkX},${chunkY}`;
       const stored = await getBrowserValue(CHUNK_STORE, key);
       if (stored) return stored;
 
@@ -58,7 +59,7 @@ export default class ChunkStore {
     if (typeof window !== 'undefined') {
       await setBrowserValue(
         CHUNK_STORE,
-        `${chunkData.chunkX},${chunkData.chunkY}`,
+        `${this.mode}:${chunkData.chunkX},${chunkData.chunkY}`,
         chunkData,
       );
       return;
@@ -74,7 +75,7 @@ export default class ChunkStore {
 
   async exists(chunkX, chunkY) {
     if (typeof window !== 'undefined') {
-      const key = `${chunkX},${chunkY}`;
+      const key = `${this.mode}:${chunkX},${chunkY}`;
       if (await getBrowserValue(CHUNK_STORE, key)) return true;
       return localStorage.getItem(this.getStorageKey(chunkX, chunkY)) !== null;
     }

@@ -103,7 +103,7 @@ export default class NetworkClient {
   }
 
   connect() {
-    this.socket = createLocalSocket();
+    this.socket = createLocalSocket(window.__DWARVEN_TAMERS_MODE || 'normal');
 
     this.socket.on('connect', () => {
       this.connected = true;

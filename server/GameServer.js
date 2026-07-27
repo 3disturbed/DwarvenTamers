@@ -73,8 +73,9 @@ import LandPlotHandler from './network/handlers/LandPlotHandler.js';
 import { LAND_PLOTS } from '../shared/LandPlotTypes.js';
 
 export default class GameServer {
-  constructor(io) {
+  constructor(io, options = {}) {
     this.io = io;
+    this.mode = options.mode || 'normal';
     this.players = new Map(); // playerId -> PlayerConnection (network wrapper)
     this.messageRouter = new MessageRouter();
     this.lastTick = Date.now();
@@ -85,13 +86,13 @@ export default class GameServer {
     this.systemManager = new SystemManager();
 
     // World
-    this.worldManager = new WorldManager();
+    this.worldManager = new WorldManager({ mode: this.mode });
 
     // Town
     this.townManager = new TownManager();
 
     // Persistence
-    this.playerRepo = new PlayerRepository();
+    this.playerRepo = new PlayerRepository(this.mode);
     this.autoSaveInterval = null;
 
     this.registerHandlers();
@@ -203,10 +204,9 @@ export default class GameServer {
     health.invulnerable = false;
     health._deathHandled = false;
 
-    // Teleport to town spawn
+    // Teleport to the configured safe spawn for this mode.
     const pos = entity.getComponent(PositionComponent);
-    const spawnX = 512 + (Math.random() - 0.5) * 64;
-    const spawnY = 512 + (Math.random() - 0.5) * 64;
+    const { x: spawnX, y: spawnY } = this._getModeSpawnPoint();
     pos.x = spawnX;
     pos.y = spawnY;
 
@@ -239,10 +239,9 @@ export default class GameServer {
     const health = entity.getComponent(HealthComponent);
     if (!health || !health.isAlive()) return; // must be alive
 
-    // Teleport to town spawn
+    // Survival mode has no town; both modes use the mode spawn point.
     const pos = entity.getComponent(PositionComponent);
-    const spawnX = 512 + (Math.random() - 0.5) * 64;
-    const spawnY = 512 + (Math.random() - 0.5) * 64;
+    const { x: spawnX, y: spawnY } = this._getModeSpawnPoint();
     pos.x = spawnX;
     pos.y = spawnY;
 
@@ -482,12 +481,14 @@ export default class GameServer {
     this.systemManager.add(new DespawnSystem());          // 51: despawn far enemies
     this.systemManager.add(this.questTrackingSystem);    // 90: quest tracking
 
-    // Migrate town stations into chunk persistence
-    await this._migrateTownStations();
+    if (this.mode !== 'survival') {
+      // Migrate town stations into chunk persistence
+      await this._migrateTownStations();
 
-    // Initialize town NPCs
-    await this.townManager.init();
-    this.townManager.spawnNPCs(this.entityManager);
+      // Initialize town NPCs
+      await this.townManager.init();
+      this.townManager.spawnNPCs(this.entityManager);
+    }
 
     // Global station registry — persists across chunk load/unload for map display
     this.stationRegistry = new Map(); // "chunkKey:idx" -> { x, y, stationId, name }
@@ -864,9 +865,10 @@ export default class GameServer {
       spawnX = saveData.position?.x ?? 512;
       spawnY = saveData.position?.y ?? 512;
     } else {
-      // New player — random spawn near town
-      spawnX = 512 + (Math.random() - 0.5) * 64;
-      spawnY = 512 + (Math.random() - 0.5) * 64;
+      // New player — random spawn near the mode start area.
+      const spawn = this._getModeSpawnPoint();
+      spawnX = spawn.x;
+      spawnY = spawn.y;
     }
 
     // Create ECS entity for the player
@@ -1257,6 +1259,13 @@ export default class GameServer {
       });
       chunk.modified = true;
     }
+  }
+
+  _getModeSpawnPoint() {
+    return {
+      x: 512 + (Math.random() - 0.5) * 64,
+      y: 512 + (Math.random() - 0.5) * 64,
+    };
   }
 
   // Helper: get entity for a player connection

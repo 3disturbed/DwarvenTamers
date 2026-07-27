@@ -79,9 +79,10 @@ class LocalIo {
 }
 
 class LocalGameHost {
-  constructor() {
+  constructor(mode = 'normal') {
+    this.mode = mode;
     this.io = new LocalIo();
-    this.game = new GameServer(this.io);
+    this.game = new GameServer(this.io, { mode });
     this.ready = this.game.init().then(() => this.game.start());
   }
 
@@ -89,7 +90,8 @@ class LocalGameHost {
     try {
       await this.ready;
       const socket = new LocalServerSocket(client);
-      const player = new PlayerConnection(socket, APP_PLAYER_ID, APP_DEFAULT_PLAYER_NAME, '#c9a84c');
+      const playerId = this.mode === 'survival' ? `${APP_PLAYER_ID}-survival` : APP_PLAYER_ID;
+      const player = new PlayerConnection(socket, playerId, APP_DEFAULT_PLAYER_NAME, '#c9a84c');
       socket.player = player;
       client.serverSocket = socket;
       client.connected = true;
@@ -113,9 +115,9 @@ class LocalGameHost {
   }
 }
 
-let host;
+const hosts = new Map();
 
-export function createLocalSocket() {
-  if (!host) host = new LocalGameHost();
-  return new LocalClientSocket(host);
+export function createLocalSocket(mode = 'normal') {
+  if (!hosts.has(mode)) hosts.set(mode, new LocalGameHost(mode));
+  return new LocalClientSocket(hosts.get(mode));
 }

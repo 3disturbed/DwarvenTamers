@@ -8,8 +8,9 @@ import RiverGenerator from './RiverGenerator.js';
 import TownTerrainOverlay from './TownTerrainOverlay.js';
 
 export default class WorldGenerator {
-  constructor(seed, biomeIndex, biomeDataMap) {
+  constructor(seed, biomeIndex, biomeDataMap, options = {}) {
     this.seed = seed;
+    this.mode = options.mode || 'normal';
     this.noise = new NoiseGenerator(seed);
     this.gradient = new GradientResolver(biomeIndex);
     this.terrain = new TerrainGenerator(this.noise);
@@ -51,7 +52,7 @@ export default class WorldGenerator {
     }
 
     // Apply town wall/road overlay for chunks near town
-    if (this.townOverlay.chunkNeedOverlay(chunkX, chunkY)) {
+    if (this.mode !== 'survival' && this.townOverlay.chunkNeedOverlay(chunkX, chunkY)) {
       this.townOverlay.applyOverlay(chunkX, chunkY, tiles, solids);
     }
 
@@ -94,6 +95,7 @@ export default class WorldGenerator {
 
   // Check if position is in town safe zone
   isInTown(chunkX, chunkY, biomeIndex) {
+    if (this.mode === 'survival') return false;
     const townX = biomeIndex.townChunkX || 0;
     const townY = biomeIndex.townChunkY || 0;
     const townR = biomeIndex.townRadius || 5;

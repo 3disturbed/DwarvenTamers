@@ -8,6 +8,7 @@ import skillSprites from './entities/SkillSprites.js';
 import itemSprites from './entities/ItemSprites.js';
 import uiSprites from './ui/UISprites.js';
 import resourceSprites from './entities/ResourceSprites.js';
+import { APP_STORAGE_PREFIX } from '../shared/AppConfig.js';
 import { initializePwa } from './pwa.js';
 import { initializeOnboarding } from './onboarding.js';
 import { initializeSaveManager } from './save-manager.js';
@@ -19,6 +20,9 @@ initializeSaveManager();
 startGame();
 
 const BRAND_SPLASH_MS = 5000;
+const GAME_MODE_KEY = `${APP_STORAGE_PREFIX}game-mode`;
+const GAME_MODE_NORMAL = 'normal';
+const GAME_MODE_SURVIVAL = 'survival';
 
 function startGame() {
   const canvas = document.getElementById('game');
@@ -28,6 +32,7 @@ function startGame() {
   const splash = document.getElementById('splash');
   const mainMenu = document.getElementById('main-menu');
   const playButton = document.getElementById('main-menu-play');
+  const survivalButton = document.getElementById('main-menu-survival');
   const helpButton = document.getElementById('main-menu-help');
   const saveButton = document.getElementById('main-menu-save');
   const helpDialog = document.getElementById('help-dialog');
@@ -37,9 +42,11 @@ function startGame() {
   let gameStarted = false;
   let menuShown = false;
 
-  const launchGame = () => {
+  const launchGame = (mode = GAME_MODE_NORMAL) => {
     if (gameStarted) return;
     gameStarted = true;
+    window.__DWARVEN_TAMERS_MODE = mode;
+    localStorage.setItem(GAME_MODE_KEY, mode);
     mainMenu?.classList.remove('visible');
     if (mainMenu) mainMenu.hidden = true;
     const game = new Game(canvas);
@@ -102,7 +109,8 @@ function startGame() {
     maybeShowMainMenu();
   });
 
-  playButton?.addEventListener('click', launchGame);
+  playButton?.addEventListener('click', () => launchGame(GAME_MODE_NORMAL));
+  survivalButton?.addEventListener('click', () => launchGame(GAME_MODE_SURVIVAL));
   helpButton?.addEventListener('click', () => helpDialog?.showModal());
   saveButton?.addEventListener('click', () => saveDialog?.showModal());
 

@@ -2,7 +2,8 @@ const SAVE_DIR = new URL('../../saves/players/', import.meta.url);
 import { APP_STORAGE_PREFIX } from '../../shared/AppConfig.js';
 
 export default class PlayerRepository {
-  constructor() {
+  constructor(mode = 'normal') {
+    this.mode = mode;
     this.ready = false;
   }
 
@@ -10,7 +11,7 @@ export default class PlayerRepository {
     try {
       if (typeof window === 'undefined') {
         const { mkdir } = await import('node:fs/promises');
-        await mkdir(SAVE_DIR, { recursive: true });
+        await mkdir(new URL(`./${this.mode}/`, SAVE_DIR), { recursive: true });
       }
       this.ready = true;
     } catch (err) {
@@ -21,11 +22,11 @@ export default class PlayerRepository {
   getPath(playerId) {
     // Sanitize: only allow alphanumeric + hyphens
     const safe = playerId.replace(/[^a-zA-Z0-9-]/g, '');
-    return new URL(`${safe}.json`, SAVE_DIR);
+    return new URL(`./${this.mode}/${safe}.json`, SAVE_DIR);
   }
 
   getStorageKey(playerId) {
-    return `${APP_STORAGE_PREFIX}player:${playerId.replace(/[^a-zA-Z0-9-]/g, '')}`;
+    return `${APP_STORAGE_PREFIX}player:${this.mode}:${playerId.replace(/[^a-zA-Z0-9-]/g, '')}`;
   }
 
   async exists(playerId) {
