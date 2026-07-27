@@ -85,6 +85,7 @@ export default class Billboard3DRenderer {
     this.scene.add(this.groundMesh);
 
     this.shadowTexture = this._createShadowTexture();
+    this.resourceShadowTexture = this._createResourceShadowTexture() || this.shadowTexture;
     this.wallTexture = this._createWallTileTexture();
 
     this.wallGeometry = new THREE.BoxGeometry(TILE_SIZE, 1, TILE_SIZE);
@@ -393,7 +394,13 @@ export default class Billboard3DRenderer {
         ? resourceSprites.getDrawSize(res.resourceId)
         : (res.size || 24);
       const texture = this._getTexture(sprite, `resource:${res.resourceId}`);
-      this._placeBillboard(texture, res.x, res.y, drawSize, 0);
+      this._placeBillboard(texture, res.x, res.y, drawSize, 0, {
+        shadowTexture: this.resourceShadowTexture,
+        shadowY: 0.1,
+        shadowOpacity: 0.72,
+        shadowScaleX: 1.06,
+        shadowScaleY: 0.74,
+      });
     }
   }
 
@@ -454,7 +461,7 @@ export default class Billboard3DRenderer {
     return texture;
   }
 
-  _placeBillboard(texture, worldX, worldY, size, liftY = 0) {
+  _placeBillboard(texture, worldX, worldY, size, liftY = 0, shadowOptions = null) {
     const mesh = this._acquireMesh(texture);
 
     mesh.visible = true;
@@ -465,17 +472,20 @@ export default class Billboard3DRenderer {
     mesh.rotation.set(0, 0, 0);
     mesh.material.opacity = 1;
 
-    this._placeShadow(worldX, worldY, size, liftY);
+    this._placeShadow(worldX, worldY, size, liftY, shadowOptions);
   }
 
-  _placeShadow(worldX, worldY, size, liftY = 0) {
-    const shadow = this._acquireShadowMesh();
+  _placeShadow(worldX, worldY, size, liftY = 0, options = null) {
+    const shadow = this._acquireShadowMesh(options?.shadowTexture || null);
     shadow.visible = true;
-    shadow.position.set(worldX, 0.04, worldY);
+    shadow.position.set(worldX, options?.shadowY ?? 0.06, worldY);
     shadow.rotation.set(-Math.PI / 2, 0, 0);
     const scale = size * (0.8 + Math.max(0, liftY) * 0.01);
-    shadow.scale.set(scale, scale * 0.68, 1);
-    shadow.material.opacity = Math.max(0.18, 0.36 - Math.max(0, liftY) * 0.02);
+    const sx = options?.shadowScaleX ?? 1;
+    const sy = options?.shadowScaleY ?? 0.68;
+    shadow.scale.set(scale * sx, scale * sy, 1);
+    const defaultOpacity = Math.max(0.18, 0.36 - Math.max(0, liftY) * 0.02);
+    shadow.material.opacity = options?.shadowOpacity ?? defaultOpacity;
   }
 
   _createShadowTexture() {
@@ -524,6 +534,17 @@ export default class Billboard3DRenderer {
     return tex;
   }
 
+  _createResourceShadowTexture() {
+    if (!resourceSprites.ground) return null;
+    const t = new THREE.Texture(resourceSprites.ground);
+    t.needsUpdate = true;
+    t.magFilter = THREE.LinearFilter;
+    t.minFilter = THREE.LinearFilter;
+    t.generateMipmaps = false;
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+
   _acquireMesh(texture) {
     let mesh = this.pool[this.activeCount];
     if (!mesh) {
@@ -549,11 +570,11 @@ export default class Billboard3DRenderer {
     return mesh;
   }
 
-  _acquireShadowMesh() {
+  _acquireShadowMesh(texture = null) {
     let shadow = this.shadowPool[this.activeShadowCount];
     if (!shadow) {
       const mat = new THREE.MeshBasicMaterial({
-        map: this.shadowTexture,
+        map: texture || this.shadowTexture,
         transparent: true,
         depthWrite: false,
       });
@@ -561,6 +582,12 @@ export default class Billboard3DRenderer {
       shadow.renderOrder = 1;
       this.shadowPool.push(shadow);
       this.scene.add(shadow);
+    }
+
+    const map = texture || this.shadowTexture;
+    if (shadow.material.map !== map) {
+      shadow.material.map = map;
+      shadow.material.needsUpdate = true;
     }
 
     this.activeShadowCount += 1;
