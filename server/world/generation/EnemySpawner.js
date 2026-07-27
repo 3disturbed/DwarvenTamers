@@ -15,6 +15,7 @@ export default class EnemySpawner {
     const baseWorldY = chunkY * CHUNK_SIZE * TILE_SIZE;
 
     for (const entry of enemyConfig.enemies) {
+      const startCount = spawnPoints.length;
       // Check every 4th tile for potential spawns (sparser than resources)
       for (let ty = 1; ty < CHUNK_SIZE; ty += 4) {
         for (let tx = 1; tx < CHUNK_SIZE; tx += 4) {
@@ -57,8 +58,49 @@ export default class EnemySpawner {
           }
         }
       }
+
+      if (entry.isHorse && spawnPoints.length === startCount) {
+        const fallback = this._findFallbackSpawnPoint(chunkX, chunkY, tiles, solids);
+        if (fallback) {
+          spawnPoints.push({
+            enemyId: entry.id,
+            x: fallback.x,
+            y: fallback.y,
+            spawnRadius: entry.spawnRadius || 256,
+            config: entry,
+          });
+        }
+      }
     }
 
     return spawnPoints;
+  }
+
+  _findFallbackSpawnPoint(chunkX, chunkY, tiles, solids) {
+    const baseWorldX = chunkX * CHUNK_SIZE * TILE_SIZE;
+    const baseWorldY = chunkY * CHUNK_SIZE * TILE_SIZE;
+    const centerTx = Math.floor(CHUNK_SIZE / 2);
+    const centerTy = Math.floor(CHUNK_SIZE / 2);
+
+    for (let radius = 0; radius < CHUNK_SIZE; radius++) {
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          const tx = centerTx + dx;
+          const ty = centerTy + dy;
+          if (tx < 0 || tx >= CHUNK_SIZE || ty < 0 || ty >= CHUNK_SIZE) continue;
+
+          const idx = ty * CHUNK_SIZE + tx;
+          if (solids[idx]) continue;
+          if (tiles && WATER_TILE_IDS.has(tiles[idx])) continue;
+
+          return {
+            x: baseWorldX + tx * TILE_SIZE + TILE_SIZE / 2,
+            y: baseWorldY + ty * TILE_SIZE + TILE_SIZE / 2,
+          };
+        }
+      }
+    }
+
+    return null;
   }
 }
