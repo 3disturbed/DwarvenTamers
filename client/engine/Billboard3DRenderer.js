@@ -21,6 +21,7 @@ const CAMERA_POSITION_DAMPING = 1;
 const DAY_CYCLE_MS = 120000;
 const GROUND_OVERSCAN = 1.8;
 const BILLBOARD_PITCH_DEG = -33;
+const STARTUP_FADE_MS = 850;
 const MAX_WALL_INSTANCES = 12000;
 const WALL_BASE_HEIGHT = TILE_SIZE * 0.75;
 const SUN_NORTH_OFFSET_Z = -320;
@@ -50,6 +51,9 @@ export default class Billboard3DRenderer {
     this.activeCount = 0;
     this.activeShadowCount = 0;
     this.frameTick = 0;
+    this.startupFadeAlpha = 1;
+    this.startupFadeStarted = false;
+    this.startupFadeStartMs = 0;
 
     if (!this.enabled) return;
 
@@ -311,6 +315,33 @@ export default class Billboard3DRenderer {
   composite(ctx, width, height) {
     if (!this.enabled) return;
     ctx.drawImage(this.canvas, 0, 0, width, height);
+
+    if (!this.startupFadeStarted && this._areBillboardSourcesReady()) {
+      this.startupFadeStarted = true;
+      this.startupFadeStartMs = this.frameTick || Date.now();
+    }
+
+    if (this.startupFadeStarted && this.startupFadeAlpha > 0) {
+      const elapsed = Math.max(0, (this.frameTick || Date.now()) - this.startupFadeStartMs);
+      this.startupFadeAlpha = Math.max(0, 1 - (elapsed / STARTUP_FADE_MS));
+    }
+
+    if (this.startupFadeAlpha > 0) {
+      ctx.save();
+      ctx.fillStyle = `rgba(0,0,0,${this.startupFadeAlpha})`;
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+    }
+  }
+
+  _areBillboardSourcesReady() {
+    return !!(
+      enemySprites.loaded
+      && npcSprites.loaded
+      && playerSprites.loaded
+      && resourceSprites.loaded
+      && stationSprites.loaded
+    );
   }
 
   _renderPlayers(data) {
