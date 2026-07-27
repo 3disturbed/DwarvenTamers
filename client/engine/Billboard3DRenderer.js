@@ -54,6 +54,11 @@ export default class Billboard3DRenderer {
     this.startupFadeAlpha = 1;
     this.startupFadeStarted = false;
     this.startupFadeStartMs = 0;
+    this.expectedResourceCount = 0;
+    this.drawnResourceCount = 0;
+    this.expectedTreeCount = 0;
+    this.drawnTreeCount = 0;
+    this.resourceDrawPassReady = false;
 
     if (!this.enabled) return;
 
@@ -251,9 +256,18 @@ export default class Billboard3DRenderer {
   render(data) {
     if (!this.enabled) return;
 
+    this.expectedResourceCount = 0;
+    this.drawnResourceCount = 0;
+    this.expectedTreeCount = 0;
+    this.drawnTreeCount = 0;
+
     this._renderWalls(data.chunks);
 
     this._renderResources(data.resources);
+    this.resourceDrawPassReady = (
+      this.drawnResourceCount >= this.expectedResourceCount
+      && this.drawnTreeCount >= this.expectedTreeCount
+    );
     this._renderStations(data.stations);
     this._renderNpcs(data.npcs);
     this._renderEnemies(data.enemies);
@@ -341,6 +355,7 @@ export default class Billboard3DRenderer {
       && playerSprites.loaded
       && resourceSprites.loaded
       && stationSprites.loaded
+      && this.resourceDrawPassReady
     );
   }
 
@@ -428,12 +443,15 @@ export default class Billboard3DRenderer {
 
   _renderResources(resources) {
     for (const res of resources.values()) {
+      const isTree = !!(res.resourceId && TREE_RESOURCE_IDS.has(res.resourceId));
       const sprite = res.resourceId ? resourceSprites.get(res.resourceId) : null;
       if (!sprite) continue;
+      this.expectedResourceCount += 1;
+      if (isTree) this.expectedTreeCount += 1;
       const drawSize = res.resourceId
         ? resourceSprites.getDrawSize(res.resourceId)
         : (res.size || 24);
-      const worldY = (res.resourceId && TREE_RESOURCE_IDS.has(res.resourceId))
+      const worldY = isTree
         ? res.y - drawSize * 0.5
         : res.y;
       const texture = this._getTexture(sprite, `resource:${res.resourceId}`);
@@ -445,6 +463,8 @@ export default class Billboard3DRenderer {
         shadowScaleX: 1.06,
         shadowScaleY: 0.74,
       });
+      this.drawnResourceCount += 1;
+      if (isTree) this.drawnTreeCount += 1;
     }
   }
 
