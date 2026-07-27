@@ -47,6 +47,7 @@ import FishingMinigame from './ui/FishingMinigame.js';
 import PvPBattlePanel from './ui/PvPBattlePanel.js';
 import { LAND_PLOTS } from '../shared/LandPlotTypes.js';
 import { BIOME_NAMES } from '../shared/BiomeTypes.js';
+import consumePointerAction from './input/consumePointerAction.js';
 
 export default class Game {
   constructor(canvas) {
@@ -1617,6 +1618,7 @@ export default class Game {
           } else if (result.action === 'choice') {
             this.network.sendDialogChoice(this.dialogPanel.npcId, result.choiceIndex);
           }
+          consumePointerAction(actions);
         }
       }
     }

@@ -1,10 +1,11 @@
-const CACHE_NAME = 'soloheim-v6';
+const CACHE_NAME = 'soloheim-v7';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './icon.svg',
   './client/main.js',
+  './client/input/consumePointerAction.js',
   './client/pwa.js',
   './client/onboarding.js',
   './client/save-manager.js',

@@ -28,6 +28,7 @@ assert(worker.includes("'./client/onboarding.js'"), 'first-run guide works offli
 assert(html.includes('id="save-dialog"'), 'save data center is present');
 assert(worker.includes("'./client/save-manager.js'"), 'save data center works offline');
 assert(worker.includes("'./shared/BrowserDatabase.js'"), 'scalable world storage works offline');
+assert(worker.includes("'./client/input/consumePointerAction.js'"), 'modal input fix works offline');
 
 for (const path of [
   '../index.html',
@@ -38,6 +39,7 @@ for (const path of [
   '../client/pwa.js',
   '../client/onboarding.js',
   '../client/save-manager.js',
+  '../client/input/consumePointerAction.js',
   '../shared/BrowserDatabase.js',
   '../.nojekyll',
 ]) {
