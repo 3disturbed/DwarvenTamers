@@ -5,7 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
   <meta name="theme-color" content="#0a0a0f">
   <meta name="description" content="A single-player survival crafting adventure that runs entirely in your browser.">
-  <title>DwarvenTamers</title>
+  <title>Dwarven Tamers</title>
+  <script>
+    (() => {
+      const refreshKey = 'soloheimstartup-refresh';
+      const refreshParam = 'dt-refresh';
+      if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') return;
+
+      const refreshUrl = new URL(window.location.href);
+      const alreadyRefreshed = sessionStorage.getItem(refreshKey) === '1';
+      if (alreadyRefreshed) {
+        sessionStorage.removeItem(refreshKey);
+        if (refreshUrl.searchParams.has(refreshParam)) {
+          refreshUrl.searchParams.delete(refreshParam);
+          window.history.replaceState({}, '', `${refreshUrl.pathname}${refreshUrl.search}${refreshUrl.hash}`);
+        }
+        return;
+      }
+
+      sessionStorage.setItem(refreshKey, '1');
+      Promise.resolve()
+        .then(async () => {
+          if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map((registration) => registration.unregister()));
+          }
+
+          if ('caches' in window) {
+            const cacheKeys = await caches.keys();
+            await Promise.all(cacheKeys.map((cacheKey) => caches.delete(cacheKey)));
+          }
+        })
+        .finally(() => {
+          refreshUrl.searchParams.set(refreshParam, String(Date.now()));
+          window.location.replace(refreshUrl.toString());
+        });
+    })();
+  </script>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <script type="importmap">
@@ -45,7 +81,7 @@
     </div>
   </div>
   <div id="splash">
-    <img src="./client/NordFolkLogo.png" alt="DwarvenTamers">
+    <img src="./client/NordFolkLogo.png" alt="Dwarven Tamers">
     <div class="loading-bar-track">
       <div class="loading-bar-fill" id="splash-bar"></div>
     </div>
@@ -54,7 +90,7 @@
   <div id="main-menu" hidden>
     <div class="main-menu__panel">
       <p class="main-menu__eyebrow">DARKS GAMES</p>
-      <h1 class="main-menu__title">Dwarven<br>Tamers</h1>
+      <h1 class="main-menu__title">Dwarven <br>Tamers</h1>
       <p class="main-menu__subtitle">A browser survival crafting adventure.</p>
       <div class="main-menu__settings">
         <label class="main-menu__field">
