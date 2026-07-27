@@ -1031,7 +1031,7 @@ export default class GameServer {
     const pc = entity.getComponent(PlayerComponent);
 
     const data = {
-      version: 1,
+      version: 2,
       id: playerConn.id,
       name: playerConn.name,
       color: playerConn.color,
@@ -1096,30 +1096,10 @@ export default class GameServer {
       }
     }
 
-    // Restore equipment (convert item IDs back to ITEM_DB entries)
+    // Restore equipment, including upgrades, gems, and legacy save migration.
     if (saveData.equipment) {
       const equip = entity.getComponent(EquipmentComponent);
-      if (equip) {
-        for (const [slot, data] of Object.entries(saveData.equipment)) {
-          if (!data) continue;
-          // New format: { id, gems, upgradeLevel, upgradeXp, pet fields, etc. }
-          if (typeof data === 'object' && data.id) {
-            const itemDef = ITEM_DB[data.id];
-            if (itemDef) {
-              // Restore ALL saved extra data (gems, upgrades, pet fields, rod parts, etc.)
-              const extra = {};
-              for (const key of Object.keys(data)) {
-                if (key === 'id') continue;
-                extra[key] = data[key];
-              }
-              equip.equip(itemDef, extra);
-            }
-          } else if (typeof data === 'string' && ITEM_DB[data]) {
-            // Old format: plain item ID string
-            equip.equip(ITEM_DB[data]);
-          }
-        }
-      }
+      if (equip) equip.restore(saveData.equipment);
     }
 
     // Restore skills

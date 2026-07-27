@@ -1,10 +1,10 @@
 /**
- * Integration test for Darkheim player persistence system.
+ * Integration test for SoloHiem player persistence system.
  *
  * Verifies:
  *   1. PlayerRepository init / save / load / exists
  *   2. Full save-restore round-trip (stats, inventory, equipment, health)
- *   3. Equipment serialization saves item IDs and restores to ITEM_DB entries
+ *   3. Equipment metadata and legacy saves restore safely
  *
  * Run:  node tests/test-persistence.js
  */
@@ -82,15 +82,7 @@ function restorePlayerData(entity, savedData) {
 
   // --- Equipment ---
   const equipment = entity.getComponent(EquipmentComponent);
-  if (savedData.equipment) {
-    for (const [slotName, itemId] of Object.entries(savedData.equipment)) {
-      if (itemId && ITEM_DB[itemId]) {
-        equipment.slots[slotName] = ITEM_DB[itemId];
-      } else {
-        equipment.slots[slotName] = null;
-      }
-    }
-  }
+  equipment.restore(savedData.equipment);
 }
 
 // ---------------------------------------------------------------------------
@@ -210,9 +202,11 @@ async function testSaveRestoreRoundTrip() {
     equipment: entity.getComponent(EquipmentComponent).serialize(),
   };
 
-  // Verify equipment serialization stores item IDs, not full objects
+  // Verify equipment serialization stores compact instance data, not full defs
   console.log('\n  -- Equipment serialization check --');
-  assertEq(saveData.equipment.weapon, 'wooden_club', 'equipment.serialize() stores weapon item ID');
+  assertEq(saveData.equipment.weapon.id, 'wooden_club', 'equipment.serialize() stores weapon item ID');
+  assertEq(saveData.equipment.weapon.upgradeLevel, 0, 'equipment.serialize() stores upgrade level');
+  assert(Array.isArray(saveData.equipment.weapon.gems), 'equipment.serialize() stores gem slots');
   assertEq(saveData.equipment.head, null, 'equipment.serialize() stores null for empty slot');
 
   // ---- Save to repo ----
@@ -278,6 +272,23 @@ async function testSaveRestoreRoundTrip() {
   assertEq(restoredEquip.getEquipped('head'), null, 'head slot is still null');
   assertEq(restoredEquip.getEquipped('body'), null, 'body slot is still null');
 
+  // Metadata survives a save/restore cycle.
+  equip.slots.weapon.upgradeLevel = 3;
+  equip.slots.weapon.upgradeXp = 47;
+  equip.slots.weapon.gems = ['cut_ruby_clear'];
+  const metadataSave = equip.serialize();
+  const metadataEquip = new EquipmentComponent();
+  metadataEquip.restore(metadataSave);
+  assertEq(metadataEquip.slots.weapon.upgradeLevel, 3, 'upgrade level survives round-trip');
+  assertEq(metadataEquip.slots.weapon.upgradeXp, 47, 'upgrade XP survives round-trip');
+  assertEq(metadataEquip.slots.weapon.gems[0], 'cut_ruby_clear', 'socketed gem survives round-trip');
+
+  // Legacy saves still migrate, while invalid slot injection is rejected.
+  const legacyEquip = new EquipmentComponent();
+  legacyEquip.restore({ weapon: 'wooden_club', head: 'wooden_club' });
+  assertEq(legacyEquip.slots.weapon.id, 'wooden_club', 'legacy item ID restores');
+  assertEq(legacyEquip.slots.head, null, 'mismatched legacy slot is rejected');
+
   // ---- Clean up test save file ----
   try {
     await unlink(repo.getPath('test-persist'));
@@ -291,7 +302,7 @@ async function testSaveRestoreRoundTrip() {
 // ---------------------------------------------------------------------------
 
 async function main() {
-  console.log('Darkheim Player Persistence -- Integration Tests');
+  console.log('SoloHiem Player Persistence -- Integration Tests');
 
   try {
     await testPlayerRepository();

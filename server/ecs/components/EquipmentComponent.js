@@ -1,5 +1,6 @@
 import Component from '../Component.js';
-import { EQUIP_SLOT } from '../../../shared/ItemTypes.js';
+import { EQUIP_SLOT, ITEM_DB } from '../../../shared/ItemTypes.js';
+import { MAX_UPGRADE_LEVEL } from '../../../shared/UpgradeTypes.js';
 
 export default class EquipmentComponent extends Component {
   constructor() {
@@ -62,5 +63,46 @@ export default class EquipmentComponent extends Component {
       }
     }
     return data;
+  }
+
+  /**
+   * Restore equipment from either the current per-instance format or the
+   * legacy plain-item-ID format. Invalid and mismatched entries are ignored so
+   * a damaged browser save cannot inject an item into an incompatible slot.
+   */
+  restore(data) {
+    for (const slot of Object.values(EQUIP_SLOT)) this.slots[slot] = null;
+    if (!data || typeof data !== 'object') return;
+
+    for (const slot of Object.values(EQUIP_SLOT)) {
+      const saved = data[slot];
+      const itemId = typeof saved === 'string' ? saved : saved?.id;
+      const itemDef = ITEM_DB[itemId];
+      if (!itemDef || itemDef.type !== 'equipment') continue;
+
+      const slotMatches = itemDef.slot === slot ||
+        (itemDef.slot === EQUIP_SLOT.RING1 && slot === EQUIP_SLOT.RING2);
+      if (!slotMatches) continue;
+
+      const equipped = { ...itemDef };
+      if (saved && typeof saved === 'object') {
+        equipped.gems = Array.isArray(saved.gems)
+          ? saved.gems.filter(gemId => typeof gemId === 'string')
+          : [];
+        equipped.upgradeLevel = Math.max(
+          0,
+          Math.min(MAX_UPGRADE_LEVEL, Math.floor(Number(saved.upgradeLevel) || 0)),
+        );
+        equipped.upgradeXp = Math.max(0, Math.floor(Number(saved.upgradeXp) || 0));
+        if (saved.rodParts && typeof saved.rodParts === 'object') {
+          equipped.rodParts = { ...saved.rodParts };
+        }
+      } else {
+        equipped.gems = [];
+        equipped.upgradeLevel = 0;
+        equipped.upgradeXp = 0;
+      }
+      this.slots[slot] = equipped;
+    }
   }
 }
