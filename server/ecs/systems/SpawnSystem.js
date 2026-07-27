@@ -65,9 +65,8 @@ export default class SpawnSystem extends System {
 
     // Spawn entities in chunks that need more
     for (const chunkKey of activeChunks) {
-      // Don't spawn in town
       const [cx, cy] = chunkKey.split(',').map(Number);
-      if (worldManager.isInTown(cx, cy)) continue;
+      const isTownChunk = worldManager.isInTown(cx, cy);
 
       const chunk = worldManager.chunkManager.getChunk(cx, cy);
       if (!chunk || !chunk.generated || chunk.spawnPoints.length === 0) continue;
@@ -85,7 +84,7 @@ export default class SpawnSystem extends System {
 
       // Spawn enemies
       const currentEnemies = this.spawnedChunks.get(chunkKey) || 0;
-      if (currentEnemies < MAX_ENEMIES_PER_CHUNK && enemySpawns.length > 0) {
+      if (!isTownChunk && currentEnemies < MAX_ENEMIES_PER_CHUNK && enemySpawns.length > 0) {
         const toSpawn = Math.min(MAX_ENEMIES_PER_CHUNK - currentEnemies, 2);
         const shuffled = [...enemySpawns].sort(() => Math.random() - 0.5);
         for (let i = 0; i < Math.min(toSpawn, shuffled.length); i++) {
