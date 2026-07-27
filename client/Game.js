@@ -2207,7 +2207,7 @@ export default class Game {
     } else {
       // First pass: bake visible terrain into a 3D ground plane texture.
       this.billboard3d.updateGround(this.camera, (groundCtx, viewW, viewH) => {
-        this.worldManager.render(groundCtx, this.camera, viewW, viewH, this.resources);
+        this.worldManager.render(groundCtx, this.camera, viewW, viewH, this.resources, { terrainOnly: true });
       });
 
       // Second pass: entities as lit 3D billboards over that 3D ground.

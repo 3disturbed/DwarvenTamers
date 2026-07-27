@@ -114,10 +114,12 @@ export default class ClientWorldManager {
     chunk.setTile(localX, localY, newTileId);
   }
 
-  render(ctx, camera, viewWidth, viewHeight, liveResources = null) {
+  render(ctx, camera, viewWidth, viewHeight, liveResources = null, options = {}) {
     for (const chunk of this.chunks.values()) {
       chunk.render(ctx, camera.x, camera.y, camera.zoom, viewWidth, viewHeight);
     }
+
+    if (options.terrainOnly) return;
 
     // Server-streamed resources are rendered later as live entities with
     // names and health. Suppress their static chunk copies to avoid a doubled
