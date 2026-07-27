@@ -6,11 +6,14 @@ import resourceSprites from '../entities/ResourceSprites.js';
 import stationSprites from '../entities/StationSprites.js';
 
 const MAX_PIXEL_RATIO = 2;
-const CAMERA_FOV = 52;
-const CAMERA_SIDE_OFFSET = 1.12;
-const CAMERA_FORWARD_OFFSET = 1.28;
-const CAMERA_HEIGHT = 0.36;
+const CAMERA_FOV = 58;
+const CAMERA_SIDE_OFFSET = 1.2;
+const CAMERA_FORWARD_OFFSET = 1.38;
+const CAMERA_HEIGHT = 0.33;
 const CAMERA_LOOK_Y = 18;
+const CAMERA_FOLLOW_DAMPING = 0.12;
+const CAMERA_POSITION_DAMPING = 0.1;
+const DAY_CYCLE_MS = 120000;
 
 export default class Billboard3DRenderer {
   constructor(hostCanvas) {
@@ -18,7 +21,9 @@ export default class Billboard3DRenderer {
     this.enabled = this._hasWebglSupport();
     this.textureCache = new Map();
     this.pool = [];
+    this.shadowPool = [];
     this.activeCount = 0;
+    this.activeShadowCount = 0;
     this.frameTick = 0;
 
     if (!this.enabled) return;
@@ -59,6 +64,12 @@ export default class Billboard3DRenderer {
     this.groundMesh.rotation.x = -Math.PI / 2;
     this.groundMesh.position.y = 0;
     this.scene.add(this.groundMesh);
+
+    this.shadowTexture = this._createShadowTexture();
+
+    this.smoothedFocus = new THREE.Vector3();
+    this.smoothedCameraPos = new THREE.Vector3();
+    this.cameraStateInitialized = false;
 
     this.planeGeometry = new THREE.PlaneGeometry(1, 1);
 
@@ -102,24 +113,52 @@ export default class Billboard3DRenderer {
 
     this.frameTick = Date.now();
     this.activeCount = 0;
+    this.activeShadowCount = 0;
 
     const zoom = Math.max(0.4, gameCamera.zoom || 1);
     const targetX = gameCamera.x;
     const targetZ = gameCamera.y;
     const distance = 420 / zoom;
 
-    this.camera.position.set(
+    const desiredPos = new THREE.Vector3(
       targetX - distance * CAMERA_SIDE_OFFSET,
       distance * CAMERA_HEIGHT,
       targetZ + distance * CAMERA_FORWARD_OFFSET,
     );
-    this.camera.lookAt(targetX, CAMERA_LOOK_Y, targetZ);
+    const desiredFocus = new THREE.Vector3(targetX, 0, targetZ);
+
+    if (!this.cameraStateInitialized) {
+      this.smoothedCameraPos.copy(desiredPos);
+      this.smoothedFocus.copy(desiredFocus);
+      this.cameraStateInitialized = true;
+    } else {
+      this.smoothedCameraPos.lerp(desiredPos, CAMERA_POSITION_DAMPING);
+      this.smoothedFocus.lerp(desiredFocus, CAMERA_FOLLOW_DAMPING);
+    }
+
+    this.camera.position.copy(this.smoothedCameraPos);
+    this.camera.lookAt(this.smoothedFocus.x, CAMERA_LOOK_Y, this.smoothedFocus.z);
 
     this.sun.position.set(
       this.camera.position.x + 160,
       this.camera.position.y + 220,
       this.camera.position.z + 130,
     );
+
+    const phase = (this.frameTick % DAY_CYCLE_MS) / DAY_CYCLE_MS;
+    const daylight = Math.max(0, Math.sin(phase * Math.PI * 2));
+    const warmSun = new THREE.Color(0xffd8ae);
+    const coolSun = new THREE.Color(0x88a9ff);
+    const warmAmbient = new THREE.Color(0x8ea6bc);
+    const coolAmbient = new THREE.Color(0x3d4f70);
+
+    this.sun.color.copy(coolSun).lerp(warmSun, daylight);
+    this.ambient.color.copy(coolAmbient).lerp(warmAmbient, daylight);
+    this.rim.color.set(0x7b9ecf);
+
+    this.sun.intensity = 0.35 + daylight * 0.95;
+    this.ambient.intensity = 0.32 + daylight * 0.4;
+    this.rim.intensity = 0.24 + (1 - daylight) * 0.28;
   }
 
   updateGround(gameCamera, drawGround) {
@@ -160,6 +199,9 @@ export default class Billboard3DRenderer {
 
     for (let i = this.activeCount; i < this.pool.length; i++) {
       this.pool[i].visible = false;
+    }
+    for (let i = this.activeShadowCount; i < this.shadowPool.length; i++) {
+      this.shadowPool[i].visible = false;
     }
 
     this.renderer.render(this.scene, this.camera);
@@ -333,6 +375,36 @@ export default class Billboard3DRenderer {
     const dz = this.camera.position.z - mesh.position.z;
     mesh.rotation.set(0, Math.atan2(dx, dz), 0);
     mesh.material.opacity = 1;
+
+    this._placeShadow(worldX, worldY, size, liftY);
+  }
+
+  _placeShadow(worldX, worldY, size, liftY = 0) {
+    const shadow = this._acquireShadowMesh();
+    shadow.visible = true;
+    shadow.position.set(worldX, 0.04, worldY);
+    shadow.rotation.set(-Math.PI / 2, 0, 0);
+    const scale = size * (0.8 + Math.max(0, liftY) * 0.01);
+    shadow.scale.set(scale, scale * 0.68, 1);
+    shadow.material.opacity = Math.max(0.18, 0.36 - Math.max(0, liftY) * 0.02);
+  }
+
+  _createShadowTexture() {
+    const c = document.createElement('canvas');
+    c.width = 64;
+    c.height = 64;
+    const g = c.getContext('2d');
+    const grad = g.createRadialGradient(32, 32, 2, 32, 32, 30);
+    grad.addColorStop(0, 'rgba(0,0,0,0.56)');
+    grad.addColorStop(0.6, 'rgba(0,0,0,0.26)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 64, 64);
+    const t = new THREE.CanvasTexture(c);
+    t.magFilter = THREE.LinearFilter;
+    t.minFilter = THREE.LinearFilter;
+    t.generateMipmaps = false;
+    return t;
   }
 
   _acquireMesh(texture) {
@@ -358,5 +430,23 @@ export default class Billboard3DRenderer {
 
     this.activeCount += 1;
     return mesh;
+  }
+
+  _acquireShadowMesh() {
+    let shadow = this.shadowPool[this.activeShadowCount];
+    if (!shadow) {
+      const mat = new THREE.MeshBasicMaterial({
+        map: this.shadowTexture,
+        transparent: true,
+        depthWrite: false,
+      });
+      shadow = new THREE.Mesh(this.planeGeometry, mat);
+      shadow.renderOrder = 1;
+      this.shadowPool.push(shadow);
+      this.scene.add(shadow);
+    }
+
+    this.activeShadowCount += 1;
+    return shadow;
   }
 }
