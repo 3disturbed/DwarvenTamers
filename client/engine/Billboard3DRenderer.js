@@ -6,6 +6,11 @@ import resourceSprites from '../entities/ResourceSprites.js';
 import stationSprites from '../entities/StationSprites.js';
 
 const MAX_PIXEL_RATIO = 2;
+const CAMERA_FOV = 52;
+const CAMERA_SIDE_OFFSET = 1.12;
+const CAMERA_FORWARD_OFFSET = 1.28;
+const CAMERA_HEIGHT = 0.36;
+const CAMERA_LOOK_Y = 18;
 
 export default class Billboard3DRenderer {
   constructor(hostCanvas) {
@@ -30,7 +35,7 @@ export default class Billboard3DRenderer {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 5000);
+    this.camera = new THREE.PerspectiveCamera(CAMERA_FOV, 1, 0.1, 5000);
 
     this.ambient = new THREE.AmbientLight(0x9eb4cf, 0.64);
     this.sun = new THREE.DirectionalLight(0xfff1db, 0.9);
@@ -77,11 +82,11 @@ export default class Billboard3DRenderer {
     const distance = 420 / zoom;
 
     this.camera.position.set(
-      targetX - distance * 0.72,
-      distance * 0.58,
-      targetZ + distance * 0.84,
+      targetX - distance * CAMERA_SIDE_OFFSET,
+      distance * CAMERA_HEIGHT,
+      targetZ + distance * CAMERA_FORWARD_OFFSET,
     );
-    this.camera.lookAt(targetX, 0, targetZ);
+    this.camera.lookAt(targetX, CAMERA_LOOK_Y, targetZ);
 
     this.sun.position.set(
       this.camera.position.x + 160,
