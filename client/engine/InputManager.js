@@ -42,7 +42,7 @@ export default class InputManager {
     // Keyboard buttons
     this.actions.mergeButton('action', this.mouse.wasJustClicked(0));
     this.actions.mergeButton('actionHeld', this.mouse.isDown(0) || this.keyboard.isDown('KeyF'));
-    this.actions.mergeButton('interact', this.keyboard.wasAnyJustPressed(['KeyE']));
+    this.actions.mergeButton('interact', this.keyboard.wasAnyJustPressed(['KeyF']));
     this.actions.mergeButton('cancel', this.keyboard.wasAnyJustPressed(['Escape']));
     this.actions.mergeButton('inventory', this.keyboard.wasAnyJustPressed(['KeyI']));
     this.actions.mergeButton('craft', this.keyboard.wasAnyJustPressed(['KeyC']));
