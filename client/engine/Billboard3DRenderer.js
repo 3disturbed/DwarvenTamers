@@ -275,6 +275,7 @@ export default class Billboard3DRenderer {
     this._renderStations(data.stations);
     this._renderNpcs(data.npcs);
     this._renderEnemies(data.enemies);
+    this._renderWildHorses(data.wildHorses);
     this._renderPlayers(data);
 
     for (let i = this.activeCount; i < this.pool.length; i++) {
@@ -442,6 +443,19 @@ export default class Billboard3DRenderer {
       const cacheKey = `enemy:${enemy.enemyId}:${frameIdx}:${enemy.facingRight ? 1 : 0}`;
       const texture = this._getFrameTexture(sprite, sx, 0, sw, sh, cacheKey, enemy.facingRight || false);
       this._placeBillboard(texture, enemy.x, enemy.y, (enemy.size || 24) * 2, enemy.isBoss ? 5 : 0);
+    }
+  }
+
+  _renderWildHorses(wildHorses) {
+    if (!wildHorses) return;
+
+    for (const horse of wildHorses.values()) {
+      this._renderHorse(
+        horse.x,
+        horse.y + 6,
+        horse.isMoving || false,
+        horse.facingRight || false,
+      );
     }
   }
 

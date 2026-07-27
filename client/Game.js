@@ -2214,6 +2214,7 @@ export default class Game {
       localPlayer: this.localPlayer,
       remotePlayers: this.remotePlayers,
       enemies: this.enemies,
+      wildHorses: this.wildHorses,
       resources: this.resources,
       stations: this.stations,
       npcs: this.npcs,
