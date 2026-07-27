@@ -10,8 +10,8 @@ import { TILE } from '../../shared/TileTypes.js';
 const MAX_PIXEL_RATIO = 2;
 const CAMERA_FOV = 58;
 const CAMERA_SIDE_OFFSET = 0;
-const CAMERA_FORWARD_OFFSET = 1.32;
-const CAMERA_HEIGHT = 0.56;
+const CAMERA_PITCH_DEG = 80;
+const CAMERA_ORBIT_DISTANCE = 420;
 const CAMERA_LOOK_Y = 18;
 const CAMERA_NEAR = 2;
 const CAMERA_FAR_BASE = 5200;
@@ -146,12 +146,15 @@ export default class Billboard3DRenderer {
     const zoom = Math.max(0.4, gameCamera.zoom || 1);
     const targetX = gameCamera.x;
     const targetZ = gameCamera.y;
-    const distance = 420 / zoom;
+    const distance = CAMERA_ORBIT_DISTANCE / zoom;
+    const pitchRad = (CAMERA_PITCH_DEG * Math.PI) / 180;
+    const horizontalOffset = Math.cos(pitchRad) * distance;
+    const verticalOffset = Math.sin(pitchRad) * distance;
 
     const desiredPos = new THREE.Vector3(
       targetX - distance * CAMERA_SIDE_OFFSET,
-      distance * CAMERA_HEIGHT,
-      targetZ + distance * CAMERA_FORWARD_OFFSET,
+      verticalOffset,
+      targetZ + horizontalOffset,
     );
     const desiredFocus = new THREE.Vector3(targetX, 0, targetZ);
 
