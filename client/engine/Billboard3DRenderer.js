@@ -21,6 +21,8 @@ const DAY_CYCLE_MS = 120000;
 const GROUND_OVERSCAN = 1.8;
 const MAX_WALL_INSTANCES = 12000;
 const WALL_BASE_HEIGHT = TILE_SIZE * 0.75;
+const SUN_NORTH_OFFSET_Z = -320;
+const SUN_HEIGHT = 300;
 
 const WALL_TILE_IDS = new Set([
   TILE.WALL,
@@ -57,7 +59,10 @@ export default class Billboard3DRenderer {
 
     this.ambient = new THREE.AmbientLight(0x9eb4cf, 0.64);
     this.sun = new THREE.DirectionalLight(0xfff1db, 0.9);
-    this.sun.position.set(160, 320, 220);
+    this.sun.position.set(0, SUN_HEIGHT, SUN_NORTH_OFFSET_Z);
+    this.sunTarget = new THREE.Object3D();
+    this.scene.add(this.sunTarget);
+    this.sun.target = this.sunTarget;
     this.rim = new THREE.DirectionalLight(0x6f8ec9, 0.28);
     this.rim.position.set(-220, 170, -180);
 
@@ -177,10 +182,11 @@ export default class Billboard3DRenderer {
     this.camera.updateProjectionMatrix();
 
     this.sun.position.set(
-      this.camera.position.x + 160,
-      this.camera.position.y + 220,
-      this.camera.position.z + 130,
+      this.smoothedFocus.x,
+      SUN_HEIGHT,
+      this.smoothedFocus.z + SUN_NORTH_OFFSET_Z,
     );
+    this.sunTarget.position.set(this.smoothedFocus.x, 0, this.smoothedFocus.z);
 
     const phase = (this.frameTick % DAY_CYCLE_MS) / DAY_CYCLE_MS;
     const daylight = Math.max(0, Math.sin(phase * Math.PI * 2));
@@ -495,6 +501,10 @@ export default class Billboard3DRenderer {
         transparent: true,
         alphaTest: 0.28,
         side: THREE.DoubleSide,
+        emissive: 0x3e4f66,
+        emissiveIntensity: 0.34,
+        roughness: 0.9,
+        metalness: 0,
       });
       mesh = new THREE.Mesh(this.planeGeometry, material);
       mesh.castShadow = false;
