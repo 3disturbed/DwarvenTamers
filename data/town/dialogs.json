@@ -1,0 +1,337 @@
+{
+  "dialogs": {
+    "elder_thorvald_dialog": {
+      "startNode": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "Welcome, traveler. I am Elder Thorvald. These lands are dangerous, but our town is safe... for now.",
+          "choices": [
+            { "text": "What is this place?", "nextNode": "about_town" },
+            { "text": "Do you have any tasks for me?", "action": "show_quests" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "about_town": {
+          "text": "This is NordFolk, the last settlement of the living. Beyond our walls, monsters roam freely. We need brave warriors to push back the darkness.",
+          "choices": [
+            { "text": "I'll help.", "action": "show_quests" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        }
+      }
+    },
+    "merchant_bryn_dialog": {
+      "startNode": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "Welcome to my shop! I've got supplies for any adventurer. What can I do for you?",
+          "choices": [
+            { "text": "Show me your wares.", "action": "open_shop" },
+            { "text": "Just browsing. Farewell.", "action": "close" }
+          ]
+        }
+      }
+    },
+    "scout_renna_dialog": {
+      "startNode": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "I've been scouting the regions beyond the meadow. There are terrible things out there... and great treasures.",
+          "choices": [
+            { "text": "What have you found?", "nextNode": "expeditions" },
+            { "text": "Do you need anything?", "action": "show_quests" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "expeditions": {
+          "text": "Each biome has a powerful guardian. Defeat them all, and we may be able to open a portal to the source of all this evil -- the Volcanic Wasteland.",
+          "choices": [
+            { "text": "I'll take on this challenge.", "action": "show_quests" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        }
+      }
+    },
+    "blacksmith_greta_dialog": {
+      "startNode": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "The forge runs hot and the steel sings! I'm Greta, best blacksmith this side of the mountains. Need tools or weapons?",
+          "choices": [
+            { "text": "Show me your wares.", "action": "open_shop" },
+            { "text": "Tell me about your craft.", "nextNode": "about_craft" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "about_craft": {
+          "text": "Every piece I forge is tested in battle. Bronze for beginners, iron for the determined, and steel for the true warriors.",
+          "choices": [
+            { "text": "I'd like to buy something.", "action": "open_shop" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        }
+      }
+    },
+    "alchemist_hilda_dialog": {
+      "startNode": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "Ah, another adventurer seeking potions? I am Hilda. My concoctions can heal wounds and restore vigor.",
+          "choices": [
+            { "text": "Show me what you have.", "action": "open_shop" },
+            { "text": "I want to help brew potions.", "nextNode": "brew_intro" },
+            { "text": "What do you sell?", "nextNode": "about_potions" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "brew_intro": {
+          "text": "Eager to learn the craft? I could use a quick hand at the distillation bench. Heat the flask, add ingredients in order, then stabilize the mixture. You'll earn gold for every potion you complete in 3 minutes.",
+          "choices": [
+            { "text": "Let's begin distilling!", "action": "start_alchemy" },
+            { "text": "Maybe later.", "action": "close" }
+          ]
+        },
+        "about_potions": {
+          "text": "Berry juice for minor wounds, mushroom soup for stamina. Bring me rare ingredients and I can brew something truly special.",
+          "choices": [
+            { "text": "Let me see your shop.", "action": "open_shop" },
+            { "text": "I want to help brew potions.", "nextNode": "brew_intro" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        }
+      }
+    },
+    "fishmonger_olaf_dialog": {
+      "startNode": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "Ho there! Name's Olaf. Fresh fish daily -- when someone catches them! The rivers are full of trout and the lakes hold even bigger prizes.",
+          "choices": [
+            { "text": "Any work for a fisherman?", "action": "show_quests" },
+            { "text": "Need help at the stall?", "nextNode": "stall_intro" },
+            { "text": "Tell me about fishing.", "nextNode": "about_fishing" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "stall_intro": {
+          "text": "Aye! The morning rush is about to hit and I'm swamped! Grab an apron -- you'll be prepping, salting, smoking, and serving as fast as you can. Think you can keep up?",
+          "choices": [
+            { "text": "Let's get to work!", "action": "start_fishmonger" },
+            { "text": "Maybe later.", "action": "close" }
+          ]
+        },
+        "about_fishing": {
+          "text": "Get yourself a rod and head to any river or lake. The deeper the water, the bigger the catch. Different biomes have different fish too!",
+          "choices": [
+            { "text": "I'll give it a try.", "action": "show_quests" },
+            { "text": "Need help at the stall?", "nextNode": "stall_intro" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        }
+      }
+    },
+    "innkeeper_sven_dialog": {
+      "startNode": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "Welcome to Sven's Tavern! Pull up a chair. We've got hot food and cold drinks.",
+          "choices": [
+            { "text": "What's on the menu?", "action": "open_shop" },
+            { "text": "Tell me the latest news.", "nextNode": "news" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "news": {
+          "text": "Travelers say the caves are rich with ore, but watch out for the creatures within. Captain Eira has been recruiting warriors to clear them out.",
+          "choices": [
+            { "text": "I'll have some food.", "action": "open_shop" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        }
+      }
+    },
+    "captain_eira_dialog": {
+      "startNode": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "Halt! I am Captain Eira of the NordFolk Guard. The wilds grow more dangerous by the day. If you've got steel in your spine, I could use your help.",
+          "choices": [
+            { "text": "What do you need?", "action": "show_quests" },
+            { "text": "What's the situation?", "nextNode": "situation" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "situation": {
+          "text": "The caves beneath our lands teem with monsters. Worse, creatures from the dark forest and mountains press closer to our walls. We need fighters.",
+          "choices": [
+            { "text": "I'll fight.", "action": "show_quests" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        }
+      }
+    },
+    "stablemaster_astrid_dialog": {
+      "startNode": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "Well met, traveler! I'm Astrid, stablemaster of NordFolk. If you've a mind for horses, you've come to the right place. The wild ones roam the meadow -- magnificent beasts, but they won't be tamed easily.",
+          "choices": [
+            { "text": "How do I get a horse?", "nextNode": "about_horses" },
+            { "text": "Heal my pets (100g)", "action": "heal_pets" },
+            { "text": "Do you have any work for me?", "action": "show_quests" },
+            { "text": "What do you have for sale?", "action": "open_shop" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "about_horses": {
+          "text": "You'll need a lasso to capture a wild horse. Help me gather supplies for the stable and I'll give you one. Once you have a horse, press Q to mount and dismount. Mounted travel is much faster!",
+          "choices": [
+            { "text": "I'd like to help.", "action": "show_quests" },
+            { "text": "Heal my pets (100g)", "action": "heal_pets" },
+            { "text": "What do you sell?", "action": "open_shop" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        }
+      }
+    },
+    "surveyor_halfdan_dialog": {
+      "startNode": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "Hail, citizen! I'm Halfdan, the town surveyor. NordFolk is expanding, and we've opened four prime corner plots for development. Interested in buying land?",
+          "choices": [
+            { "text": "Tell me about the plots.", "nextNode": "about_plots" },
+            { "text": "I'd like to buy a plot.", "nextNode": "buy_menu" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "about_plots": {
+          "text": "Each plot costs 500 gold and gives you a corner of the town to develop. Once purchased, you can place crafting stations, chests, and other structures within your land.",
+          "choices": [
+            { "text": "Show me what's available.", "nextNode": "buy_menu" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "buy_menu": {
+          "text": "Which plot interests you? Each costs 500 gold.",
+          "choices": [
+            { "text": "Northeast Plot (Market side) - 500g", "action": "buy_plot", "plotId": "plot_ne" },
+            { "text": "Northwest Plot (Barracks side) - 500g", "action": "buy_plot", "plotId": "plot_nw" },
+            { "text": "Southeast Plot (Residential side) - 500g", "action": "buy_plot", "plotId": "plot_se" },
+            { "text": "Southwest Plot (Craft side) - 500g", "action": "buy_plot", "plotId": "plot_sw" }
+          ]
+        }
+      }
+    },
+    "farmer_bjorn_dialog": {
+      "startNode": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "Well met, friend! I'm Bjorn. I tend the fields near the south gate. The soil here is good, but I could always use an extra pair of hands gathering supplies.",
+          "choices": [
+            { "text": "Need any help?", "action": "show_quests" },
+            { "text": "What do you grow?", "nextNode": "farming" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "farming": {
+          "text": "Berries, flax, herbs -- the land provides if you know where to look. The meadow has the basics, but rarer plants grow in the darker biomes.",
+          "choices": [
+            { "text": "I'll help you gather.", "action": "show_quests" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        }
+      }
+    },
+    "wise_old_man_dialog": {
+      "startNode": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "I sense turmoil in your spirit, adventurer. Your attributes may not reflect your true path.",
+          "choices": [
+            { "text": "I need to realign my stats.", "action": "show_quests" },
+            { "text": "Farewell, elder.", "action": "close" }
+          ]
+        }
+      }
+    },
+    "bjorn_harebane_dialog": {
+      "startNode": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "Well I'll be frozen in the fjord... Astrid found herself another cub.",
+          "choices": [
+            { "text": "Who are you?", "nextNode": "who_are_you" },
+            { "text": "Do you have any work for me?", "action": "show_quests" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "who_are_you": {
+          "text": "Bjorn Harebane. Best rabbit trainer in Darkheim. (Astrid, calmly: Debatable.)",
+          "choices": [
+            { "text": "Tell me more.", "nextNode": "about_training" },
+            { "text": "Got any challenges for me?", "action": "show_quests" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "about_training": {
+          "text": "Bjorn circles you, inspecting your pet. \"Tier 1? Fresh capture? Hah. You planning to win battles or knit it a scarf?\"",
+          "choices": [
+            { "text": "It will grow.", "nextNode": "it_will_grow" },
+            { "text": "Show me what you've got.", "action": "show_quests" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "it_will_grow": {
+          "text": "Everything grows. Few become dangerous. Tell you what, cub. Finish your ten rabbits. Then face me. No killing blows from your own hands. Let your pets do the work.",
+          "choices": [
+            { "text": "Challenge accepted.", "action": "show_quests" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "pre_battle": {
+          "text": "Now we test you. Three rounds. No potions. No cowardice. (Astrid: Remember what I taught you. Patience wins wars.)",
+          "choices": [
+            { "text": "Let's fight.", "action": "start_npc_pet_battle" },
+            { "text": "Not yet.", "action": "close" }
+          ]
+        },
+        "post_battle_win": {
+          "text": "Bjorn kneels, laughing loudly. \"HA! That's what I wanted to see!\" He stands and offers his hand. \"You didn't panic. Didn't rush. That's trainer blood. But listen closely. Wild rabbits are nothing. Tier 2 is where it begins.\"",
+          "choices": [
+            { "text": "What's next?", "action": "show_quests" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "pen_building": {
+          "text": "Bjorn watches you. \"You're serious about this.\" You reply: \"I don't half-build.\" Bjorn grins. \"Good. Because once that rabbit hits Tier 2... We rematch. And next time? I won't hold back.\"",
+          "choices": [
+            { "text": "I'll be ready.", "action": "show_quests" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        },
+        "tier2_achieved": {
+          "text": "Bjorn whistles sharply. His rabbits stand alert. \"Now THAT... is respectable.\" (Astrid: The cub has teeth now.) Bjorn smirks. \"Tier 2 rabbit? Super cool. You're officially a pro trainer in my book. But don't get comfortable. Darkheim has stronger beasts. And I plan to catch them first.\"",
+          "choices": [
+            { "text": "We'll see about that.", "action": "close" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        }
+      }
+    },
+    "postmaster_paul_dialog": {
+      "startNode": "greeting",
+      "nodes": {
+        "greeting": {
+          "text": "Hail, traveler! I'm Postmaster Paul. The mail never stops in NordFolk. Need a job, or want to help sort packages?",
+          "choices": [
+            { "text": "I'd like a delivery job.", "action": "show_mail_jobs" },
+            { "text": "Any packages to collect?", "action": "show_collection_jobs" },
+            { "text": "I'll help sort packages.", "action": "start_sorting" },
+            { "text": "Farewell.", "action": "close" }
+          ]
+        }
+      }
+    }
+  }
+}

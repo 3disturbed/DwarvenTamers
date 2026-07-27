@@ -1,0 +1,363 @@
+{
+  "quests": [
+    {
+      "id": "quest_welcome",
+      "name": "Welcome to NordFolk",
+      "description": "Speak with Elder Thorvald to learn about the village and its plight.",
+      "giverNpcId": "elder_thorvald",
+      "turnInNpcId": "elder_thorvald",
+      "objectives": [
+        { "type": "talk_to", "target": "elder_thorvald", "required": 1, "description": "Talk to Elder Thorvald" }
+      ],
+      "rewards": { "xp": 10, "items": [{ "itemId": "berry", "count": 5 }] },
+      "prerequisiteQuests": []
+    },
+    {
+      "id": "quest_gather_wood",
+      "name": "Gathering Supplies",
+      "description": "The village needs wood and stone for repairs. Gather resources from the meadow.",
+      "giverNpcId": "elder_thorvald",
+      "turnInNpcId": "elder_thorvald",
+      "objectives": [
+        { "type": "collect", "target": "wood", "required": 10, "description": "Collect 10 Wood" },
+        { "type": "collect", "target": "stone", "required": 5, "description": "Collect 5 Stone" }
+      ],
+      "rewards": { "xp": 25, "items": [{ "itemId": "stick", "count": 10 }, { "itemId": "gold", "count": 5 }] },
+      "prerequisiteQuests": ["quest_welcome"]
+    },
+    {
+      "id": "quest_craft_weapon",
+      "name": "Arm Yourself",
+      "description": "You'll need a weapon to survive. Craft a wooden club at any workbench or by hand.",
+      "giverNpcId": "elder_thorvald",
+      "turnInNpcId": "elder_thorvald",
+      "objectives": [
+        { "type": "craft", "target": "wooden_club", "required": 1, "description": "Craft a Wooden Club" }
+      ],
+      "rewards": { "xp": 30, "items": [{ "itemId": "leather", "count": 3 }, { "itemId": "gold", "count": 10 }] },
+      "prerequisiteQuests": ["quest_gather_wood"]
+    },
+    {
+      "id": "quest_kill_greylings",
+      "name": "Clearing the Meadow",
+      "description": "Greylings have been getting bolder. Thin their numbers to keep the meadow safe.",
+      "giverNpcId": "elder_thorvald",
+      "turnInNpcId": "elder_thorvald",
+      "objectives": [
+        { "type": "kill", "target": "greyling", "required": 5, "description": "Kill 5 Greylings" }
+      ],
+      "rewards": { "xp": 50, "items": [{ "itemId": "bone_fragment", "count": 5 }, { "itemId": "gold", "count": 15 }] },
+      "prerequisiteQuests": ["quest_craft_weapon"]
+    },
+    {
+      "id": "quest_slay_bramblethorn",
+      "name": "The First Trial",
+      "description": "A great beast lurks in the meadow. Use the Summoning Shrine to call forth Bramblethorn and defeat it.",
+      "giverNpcId": "elder_thorvald",
+      "turnInNpcId": "elder_thorvald",
+      "objectives": [
+        { "type": "kill", "target": "bramblethorn", "required": 1, "description": "Slay Bramblethorn" }
+      ],
+      "rewards": { "xp": 200, "items": [{ "itemId": "copper_ore", "count": 20 }, { "itemId": "gold", "count": 50 }] },
+      "prerequisiteQuests": ["quest_kill_greylings"]
+    },
+    {
+      "id": "quest_deliver_supplies",
+      "name": "Supply Run",
+      "description": "Scout Renna needs leather for equipment. Bring some to her.",
+      "giverNpcId": "scout_renna",
+      "turnInNpcId": "scout_renna",
+      "objectives": [
+        { "type": "collect", "target": "leather", "required": 3, "description": "Bring 3 Leather to Scout Renna" }
+      ],
+      "rewards": { "xp": 40, "items": [{ "itemId": "gold", "count": 20 }] },
+      "prerequisiteQuests": ["quest_craft_weapon"]
+    },
+    {
+      "id": "quest_explore_darkforest",
+      "name": "Into the Dark Forest",
+      "description": "Venture beyond the meadow. The dark forest is dangerous, but we need to know what lurks there.",
+      "giverNpcId": "scout_renna",
+      "turnInNpcId": "scout_renna",
+      "objectives": [
+        { "type": "kill", "target": "dark_troll", "required": 3, "description": "Kill 3 Dark Trolls" }
+      ],
+      "rewards": { "xp": 300, "items": [{ "itemId": "gold", "count": 100 }] },
+      "prerequisiteQuests": ["quest_slay_bramblethorn"]
+    },
+    {
+      "id": "quest_portal_to_hell",
+      "name": "The Gate to Hell",
+      "description": "The source of the darkness must be destroyed. Defeat the guardians of each biome and build the portal.",
+      "giverNpcId": "scout_renna",
+      "turnInNpcId": "scout_renna",
+      "objectives": [
+        { "type": "kill", "target": "bramblethorn", "required": 1, "description": "Defeat Bramblethorn" },
+        { "type": "kill", "target": "forest_guardian", "required": 1, "description": "Defeat the Forest Guardian" },
+        { "type": "craft", "target": "hell_portal", "required": 1, "description": "Build the Hell Portal" }
+      ],
+      "rewards": { "xp": 1000, "items": [{ "itemId": "gold", "count": 500 }] },
+      "prerequisiteQuests": ["quest_explore_darkforest"]
+    },
+    {
+      "id": "quest_guard_duty",
+      "name": "Guard Duty",
+      "description": "The meadow perimeter needs securing. Kill the greylings that have been harassing travelers near the village.",
+      "giverNpcId": "captain_eira",
+      "turnInNpcId": "captain_eira",
+      "objectives": [
+        { "type": "kill", "target": "greyling", "required": 10, "description": "Kill 10 Greylings in the Meadow" }
+      ],
+      "rewards": { "xp": 40, "items": [{ "itemId": "gold", "count": 20 }] },
+      "prerequisiteQuests": []
+    },
+    {
+      "id": "quest_cave_clearance",
+      "name": "Cave Clearance",
+      "description": "A nearby cave has become infested with dangerous creatures. Clear out the bats and spiders lurking within.",
+      "giverNpcId": "captain_eira",
+      "turnInNpcId": "captain_eira",
+      "objectives": [
+        { "type": "kill", "target": "cave_bat", "required": 5, "description": "Kill 5 Cave Bats" },
+        { "type": "kill", "target": "cave_spider", "required": 3, "description": "Kill 3 Cave Spiders" }
+      ],
+      "rewards": { "xp": 80, "items": [{ "itemId": "gold", "count": 50 }, { "itemId": "bronze_nails", "count": 5 }] },
+      "prerequisiteQuests": ["quest_guard_duty"]
+    },
+    {
+      "id": "quest_forest_patrol",
+      "name": "Forest Patrol",
+      "description": "Forest trolls have been spotted deeper in the dark forest. Lead a patrol and eliminate the threat.",
+      "giverNpcId": "captain_eira",
+      "turnInNpcId": "captain_eira",
+      "objectives": [
+        { "type": "kill", "target": "forest_troll", "required": 3, "description": "Kill 3 Forest Trolls in the Dark Forest" }
+      ],
+      "rewards": { "xp": 200, "items": [{ "itemId": "gold", "count": 100 }] },
+      "prerequisiteQuests": ["quest_cave_clearance"]
+    },
+    {
+      "id": "quest_mountain_expedition",
+      "name": "Mountain Expedition",
+      "description": "Ice golems guard the mountain passes. Destroy them to open the way for the village expeditions.",
+      "giverNpcId": "captain_eira",
+      "turnInNpcId": "captain_eira",
+      "objectives": [
+        { "type": "kill", "target": "ice_golem", "required": 2, "description": "Kill 2 Ice Golems" }
+      ],
+      "rewards": { "xp": 500, "items": [{ "itemId": "gold", "count": 200 }] },
+      "prerequisiteQuests": ["quest_forest_patrol"]
+    },
+    {
+      "id": "quest_first_catch",
+      "name": "First Catch",
+      "description": "The village could use some fresh fish. Catch some river trout from the nearby streams.",
+      "giverNpcId": "fishmonger_olaf",
+      "turnInNpcId": "fishmonger_olaf",
+      "objectives": [
+        { "type": "collect", "target": "river_trout", "required": 3, "description": "Collect 3 River Trout" }
+      ],
+      "rewards": { "xp": 30, "items": [{ "itemId": "gold", "count": 15 }] },
+      "prerequisiteQuests": []
+    },
+    {
+      "id": "quest_deep_water_fishing",
+      "name": "Deep Water Fishing",
+      "description": "Olaf needs rarer catches for a special order. Venture to the lake and swamp for prized fish.",
+      "giverNpcId": "fishmonger_olaf",
+      "turnInNpcId": "fishmonger_olaf",
+      "objectives": [
+        { "type": "collect", "target": "lake_bass", "required": 1, "description": "Collect 1 Lake Bass" },
+        { "type": "collect", "target": "swamp_eel", "required": 2, "description": "Collect 2 Swamp Eels" }
+      ],
+      "rewards": { "xp": 100, "items": [{ "itemId": "gold", "count": 50 }] },
+      "prerequisiteQuests": ["quest_first_catch"]
+    },
+    {
+      "id": "quest_feed_village",
+      "name": "Feed the Village",
+      "description": "The village larder is running low. Gather berries and raw meat to help feed the people.",
+      "giverNpcId": "farmer_bjorn",
+      "turnInNpcId": "farmer_bjorn",
+      "objectives": [
+        { "type": "collect", "target": "berry", "required": 10, "description": "Collect 10 Berries" },
+        { "type": "collect", "target": "raw_meat", "required": 5, "description": "Collect 5 Raw Meat" }
+      ],
+      "rewards": { "xp": 25, "items": [{ "itemId": "gold", "count": 15 }, { "itemId": "cooked_meat", "count": 3 }] },
+      "prerequisiteQuests": []
+    },
+    {
+      "id": "quest_flax_harvest",
+      "name": "Flax Harvest",
+      "description": "Bjorn needs flax to make linen for the village. Harvest flax from the fields and plains.",
+      "giverNpcId": "farmer_bjorn",
+      "turnInNpcId": "farmer_bjorn",
+      "objectives": [
+        { "type": "collect", "target": "flax", "required": 15, "description": "Collect 15 Flax" }
+      ],
+      "rewards": { "xp": 35, "items": [{ "itemId": "linen_thread", "count": 5 }] },
+      "prerequisiteQuests": ["quest_feed_village"]
+    },
+    {
+      "id": "quest_mushroom_forager",
+      "name": "Mushroom Forager",
+      "description": "Mushrooms are needed for stews and remedies. Forage for mushrooms in the forest undergrowth.",
+      "giverNpcId": "farmer_bjorn",
+      "turnInNpcId": "farmer_bjorn",
+      "objectives": [
+        { "type": "collect", "target": "mushroom", "required": 10, "description": "Collect 10 Mushrooms" }
+      ],
+      "rewards": { "xp": 45, "items": [{ "itemId": "mushroom_soup", "count": 2 }] },
+      "prerequisiteQuests": ["quest_flax_harvest"]
+    },
+    {
+      "id": "quest_rare_herb_hunt",
+      "name": "Rare Herb Hunt",
+      "description": "Bjorn has heard of rare herbs growing in dangerous territory. Gather thistle and ancient bark for the village herbalist.",
+      "giverNpcId": "farmer_bjorn",
+      "turnInNpcId": "farmer_bjorn",
+      "objectives": [
+        { "type": "collect", "target": "thistle", "required": 5, "description": "Collect 5 Thistle" },
+        { "type": "collect", "target": "ancient_bark", "required": 3, "description": "Collect 3 Ancient Bark" }
+      ],
+      "rewards": { "xp": 150, "items": [{ "itemId": "gold", "count": 80 }] },
+      "prerequisiteQuests": ["quest_mushroom_forager"]
+    },
+    {
+      "id": "quest_tame_the_wilds",
+      "name": "Tame the Wilds",
+      "description": "Stablemaster Astrid needs leather and flax to maintain the stable. Gather the materials and she'll reward you with lassos for capturing wild horses.",
+      "giverNpcId": "stablemaster_astrid",
+      "turnInNpcId": "stablemaster_astrid",
+      "objectives": [
+        { "type": "collect", "target": "leather_scrap", "required": 5, "description": "Collect 5 Leather Scraps" },
+        { "type": "collect", "target": "flax", "required": 8, "description": "Collect 8 Flax" }
+      ],
+      "rewards": { "xp": 50, "items": [{ "itemId": "lasso", "count": 3 }, { "itemId": "gold", "count": 25 }] },
+      "prerequisiteQuests": []
+    },
+    {
+      "id": "quest_first_ride",
+      "name": "First Ride",
+      "description": "Astrid wants proof you're ready to handle a horse. Show her you have a lasso prepared.",
+      "giverNpcId": "stablemaster_astrid",
+      "turnInNpcId": "stablemaster_astrid",
+      "objectives": [
+        { "type": "collect", "target": "lasso", "required": 1, "description": "Have a Lasso ready" }
+      ],
+      "rewards": { "xp": 75, "items": [{ "itemId": "gold", "count": 40 }] },
+      "prerequisiteQuests": ["quest_tame_the_wilds"]
+    },
+    {
+      "id": "quest_horse_endurance",
+      "name": "Horse Endurance",
+      "description": "Astrid challenges you to prove your horsemanship. Hunt greylings to show your skill in mounted combat.",
+      "giverNpcId": "stablemaster_astrid",
+      "turnInNpcId": "stablemaster_astrid",
+      "objectives": [
+        { "type": "kill", "target": "greyling", "required": 10, "description": "Kill 10 Greylings" }
+      ],
+      "rewards": { "xp": 100, "items": [{ "itemId": "lasso", "count": 2 }, { "itemId": "gold", "count": 50 }] },
+      "prerequisiteQuests": ["quest_first_ride"]
+    },
+    {
+      "id": "quest_forge_alliance",
+      "name": "Forge the Alliance",
+      "description": "The village is growing. Thorvald asks you to contribute copper ingots and oak planks to strengthen the town's infrastructure.",
+      "giverNpcId": "elder_thorvald",
+      "turnInNpcId": "elder_thorvald",
+      "objectives": [
+        { "type": "collect", "target": "copper_ingot", "required": 10, "description": "Collect 10 Copper Ingots" },
+        { "type": "collect", "target": "oak_plank", "required": 10, "description": "Collect 10 Oak Planks" }
+      ],
+      "rewards": { "xp": 100, "items": [{ "itemId": "gold", "count": 75 }] },
+      "prerequisiteQuests": ["quest_slay_bramblethorn"]
+    },
+    {
+      "id": "quest_volcanic_recon",
+      "name": "Volcanic Recon",
+      "description": "Scout Renna needs intelligence about the volcanic wasteland. Bring back obsidian and flametal ore as proof of your expedition.",
+      "giverNpcId": "scout_renna",
+      "turnInNpcId": "scout_renna",
+      "objectives": [
+        { "type": "collect", "target": "obsidian", "required": 5, "description": "Collect 5 Obsidian" },
+        { "type": "collect", "target": "flametal_ore", "required": 3, "description": "Collect 3 Flametal Ore" }
+      ],
+      "rewards": { "xp": 500, "items": [{ "itemId": "gold", "count": 250 }] },
+      "prerequisiteQuests": ["quest_explore_darkforest"]
+    },
+    {
+      "id": "quest_legendary_catch",
+      "name": "The Legendary Catch",
+      "description": "Olaf has heard tales of a golden carp that swims in the deepest waters. Find one and bring it back.",
+      "giverNpcId": "fishmonger_olaf",
+      "turnInNpcId": "fishmonger_olaf",
+      "objectives": [
+        { "type": "collect", "target": "golden_carp", "required": 1, "description": "Catch 1 Golden Carp" }
+      ],
+      "rewards": { "xp": 200, "items": [{ "itemId": "gold", "count": 150 }] },
+      "prerequisiteQuests": ["quest_deep_water_fishing"]
+    },
+    {
+      "id": "quest_rabbit_trial",
+      "name": "The Rabbit Trial",
+      "description": "Bjorn Harebane challenges you to defeat 10 rabbits using only your pets. No killing blows from your own hands.",
+      "giverNpcId": "bjorn_harebane",
+      "turnInNpcId": "bjorn_harebane",
+      "objectives": [
+        { "type": "pet_battle_kill", "target": "rabbit", "required": 10, "description": "Defeat 10 Rabbits in Pet Battles" }
+      ],
+      "rewards": { "xp": 50, "items": [{ "itemId": "wooden_cage", "count": 3 }, { "itemId": "gold", "count": 25 }] },
+      "prerequisiteQuests": []
+    },
+    {
+      "id": "quest_rival_meadow",
+      "name": "Rival of the Meadow",
+      "description": "Face Bjorn Harebane in a pet battle. Three rounds. No potions. No cowardice.",
+      "giverNpcId": "bjorn_harebane",
+      "turnInNpcId": "bjorn_harebane",
+      "objectives": [
+        { "type": "npc_pet_battle", "target": "bjorn_harebane", "required": 1, "description": "Defeat Bjorn Harebane in a Pet Battle" }
+      ],
+      "rewards": { "xp": 100, "items": [{ "itemId": "pet_salve", "count": 5 }, { "itemId": "gold", "count": 50 }] },
+      "prerequisiteQuests": ["quest_rabbit_trial"]
+    },
+    {
+      "id": "quest_build_pen",
+      "name": "Build Your Pen",
+      "description": "Bjorn says a real trainer needs a proper pen. Build an Animal Pen to house and breed your creatures.",
+      "giverNpcId": "bjorn_harebane",
+      "turnInNpcId": "bjorn_harebane",
+      "objectives": [
+        { "type": "craft", "target": "animal_pen", "required": 1, "description": "Build an Animal Pen" }
+      ],
+      "rewards": { "xp": 75, "items": [{ "itemId": "raw_meat", "count": 10 }, { "itemId": "berry", "count": 10 }, { "itemId": "gold", "count": 30 }] },
+      "prerequisiteQuests": ["quest_rival_meadow"]
+    },
+    {
+      "id": "quest_tier2_rabbit",
+      "name": "Rise to Tier 2",
+      "description": "Train your rabbit to Tier 2. Bjorn says that's where it really begins.",
+      "giverNpcId": "bjorn_harebane",
+      "turnInNpcId": "bjorn_harebane",
+      "objectives": [
+        { "type": "pet_tier", "target": "rabbit", "required": 2, "description": "Upgrade a Rabbit to Tier 2" }
+      ],
+      "rewards": { "xp": 150, "items": [{ "itemId": "iron_cage", "count": 1 }, { "itemId": "gold", "count": 75 }] },
+      "prerequisiteQuests": ["quest_build_pen"]
+    },
+    {
+      "id": "quest_stat_reset",
+      "name": "Realignment of Spirit",
+      "description": "The Wise Old Man will reset your stat allocations, returning all spent points.",
+      "giverNpcId": "wise_old_man",
+      "turnInNpcId": "wise_old_man",
+      "repeatable": true,
+      "objectives": [
+        { "type": "talk_to", "target": "wise_old_man", "required": 1, "description": "Speak with the Wise Old Man" }
+      ],
+      "rewards": { "xp": 0, "resetStats": true },
+      "prerequisiteQuests": []
+    }
+  ]
+}

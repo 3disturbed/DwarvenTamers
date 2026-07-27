@@ -1,0 +1,1272 @@
+import { TICK_MS, TICK_RATE, CHUNK_PIXEL_SIZE, VIEW_DISTANCE } from '../shared/Constants.js';
+import { MSG } from '../shared/MessageTypes.js';
+import MessageRouter from './network/MessageRouter.js';
+import MovementHandler from './network/handlers/MovementHandler.js';
+import ChunkHandler from './network/handlers/ChunkHandler.js';
+import CombatHandler from './network/handlers/CombatHandler.js';
+import InventoryHandler from './network/handlers/InventoryHandler.js';
+import InteractionHandler from './network/handlers/InteractionHandler.js';
+import CraftingHandler from './network/handlers/CraftingHandler.js';
+import UpgradeHandler from './network/handlers/UpgradeHandler.js';
+import SkillHandler from './network/handlers/SkillHandler.js';
+import DialogHandler from './network/handlers/DialogHandler.js';
+import QuestHandler from './network/handlers/QuestHandler.js';
+import ShopHandler from './network/handlers/ShopHandler.js';
+import ChestHandler from './network/handlers/ChestHandler.js';
+import FishingHandler from './network/handlers/FishingHandler.js';
+import HorseHandler from './network/handlers/HorseHandler.js';
+import PetHandler from './network/handlers/PetHandler.js';
+import PetBattleManager from './pet/PetBattleManager.js';
+import PvPBattleManager from './pet/PvPBattleManager.js';
+import PetBreedingManager from './pet/PetBreedingManager.js';
+import MailHandler from './network/handlers/MailHandler.js';
+import SortingHandler from './network/handlers/SortingHandler.js';
+import AlchemyHandler from './network/handlers/AlchemyHandler.js';
+import FishmongerHandler from './network/handlers/FishmongerHandler.js';
+import QuestComponent from './ecs/components/QuestComponent.js';
+import EntityManager from './ecs/EntityManager.js';
+import SystemManager from './ecs/SystemManager.js';
+import EntityFactory from './ecs/EntityFactory.js';
+import MovementSystem from './ecs/systems/MovementSystem.js';
+import CollisionSystem from './ecs/systems/CollisionSystem.js';
+import AISystem from './ecs/systems/AISystem.js';
+import CombatSystem from './ecs/systems/CombatSystem.js';
+import HealthSystem from './ecs/systems/HealthSystem.js';
+import LootSystem from './ecs/systems/LootSystem.js';
+import StatusEffectSystem from './ecs/systems/StatusEffectSystem.js';
+import SpawnSystem from './ecs/systems/SpawnSystem.js';
+import DespawnSystem from './ecs/systems/DespawnSystem.js';
+import StatSystem from './ecs/systems/StatSystem.js';
+import ResourceSpawnSystem from './ecs/systems/ResourceSpawnSystem.js';
+import StructureSpawnSystem from './ecs/systems/StructureSpawnSystem.js';
+import SkillSystem from './ecs/systems/SkillSystem.js';
+import QuestTrackingSystem from './ecs/systems/QuestTrackingSystem.js';
+import ProjectileSystem from './ecs/systems/ProjectileSystem.js';
+import DamageZoneSystem from './ecs/systems/DamageZoneSystem.js';
+import CombatResolver from './combat/CombatResolver.js';
+import TileCollisionMap from './collision/TileCollisionMap.js';
+import WorldManager from './world/WorldManager.js';
+import PositionComponent from './ecs/components/PositionComponent.js';
+import VelocityComponent from './ecs/components/VelocityComponent.js';
+import PlayerComponent from './ecs/components/PlayerComponent.js';
+import NameComponent from './ecs/components/NameComponent.js';
+import HealthComponent from './ecs/components/HealthComponent.js';
+import AIComponent from './ecs/components/AIComponent.js';
+import ColliderComponent from './ecs/components/ColliderComponent.js';
+import StatsComponent from './ecs/components/StatsComponent.js';
+import InventoryComponent from './ecs/components/InventoryComponent.js';
+import EquipmentComponent from './ecs/components/EquipmentComponent.js';
+import ResourceNodeComponent from './ecs/components/ResourceNodeComponent.js';
+import CraftingStationComponent from './ecs/components/CraftingStationComponent.js';
+import SkillComponent from './ecs/components/SkillComponent.js';
+import PlayerRepository from './persistence/PlayerRepository.js';
+import { ITEM_DB } from '../shared/ItemTypes.js';
+import { TOWN_STATIONS, STATION_DB } from '../shared/StationTypes.js';
+import { getDefaultHotbar } from '../shared/SkillTypes.js';
+import SkillExecutor from './skills/SkillExecutor.js';
+import TownManager from './town/TownManager.js';
+import NPCComponent from './ecs/components/NPCComponent.js';
+import HorseComponent from './ecs/components/HorseComponent.js';
+import ProjectileComponent from './ecs/components/ProjectileComponent.js';
+import DamageZoneComponent from './ecs/components/DamageZoneComponent.js';
+import LandPlotHandler from './network/handlers/LandPlotHandler.js';
+import { LAND_PLOTS } from '../shared/LandPlotTypes.js';
+
+export default class GameServer {
+  constructor(io) {
+    this.io = io;
+    this.players = new Map(); // playerId -> PlayerConnection (network wrapper)
+    this.messageRouter = new MessageRouter();
+    this.lastTick = Date.now();
+    this.tickCount = 0;
+
+    // ECS
+    this.entityManager = new EntityManager();
+    this.systemManager = new SystemManager();
+
+    // World
+    this.worldManager = new WorldManager();
+
+    // Town
+    this.townManager = new TownManager();
+
+    // Persistence
+    this.playerRepo = new PlayerRepository();
+    this.autoSaveInterval = null;
+
+    this.registerHandlers();
+  }
+
+  registerHandlers() {
+    const movementHandler = new MovementHandler(this);
+    movementHandler.register(this.messageRouter);
+
+    const chunkHandler = new ChunkHandler(this);
+    chunkHandler.register(this.messageRouter);
+
+    this.combatHandler = new CombatHandler(this);
+    this.combatHandler.register(this.messageRouter);
+
+    const inventoryHandler = new InventoryHandler(this);
+    inventoryHandler.register(this.messageRouter);
+
+    const interactionHandler = new InteractionHandler(this);
+    interactionHandler.register(this.messageRouter);
+
+    const craftingHandler = new CraftingHandler(this);
+    craftingHandler.register(this.messageRouter);
+
+    const upgradeHandler = new UpgradeHandler(this);
+    upgradeHandler.register(this.messageRouter);
+
+    const skillHandler = new SkillHandler(this);
+    skillHandler.register(this.messageRouter);
+
+    this.dialogHandler = new DialogHandler(this);
+    this.dialogHandler.register(this.messageRouter);
+
+    this.questHandler = new QuestHandler(this);
+    this.questHandler.register(this.messageRouter);
+
+    const shopHandler = new ShopHandler(this);
+    shopHandler.register(this.messageRouter);
+
+    this.chestHandler = new ChestHandler(this);
+    this.chestHandler.register(this.messageRouter);
+
+    this.fishingHandler = new FishingHandler(this);
+    this.fishingHandler.register(this.messageRouter);
+
+    const horseHandler = new HorseHandler(this);
+    horseHandler.register(this.messageRouter);
+
+    this.petHandler = new PetHandler(this);
+    this.petHandler.register(this.messageRouter);
+
+    this.petBattleManager = new PetBattleManager(this);
+    this.petBattleManager.register(this.messageRouter);
+
+    this.pvpBattleManager = new PvPBattleManager(this);
+    this.pvpBattleManager.register(this.messageRouter);
+
+    this.petBreedingManager = new PetBreedingManager(this);
+    this.petBreedingManager.register(this.messageRouter);
+
+    this.landPlotHandler = new LandPlotHandler(this);
+    this.landPlotHandler.register(this.messageRouter);
+
+    this.mailHandler = new MailHandler(this);
+    this.mailHandler.register(this.messageRouter);
+
+    this.sortingHandler = new SortingHandler(this);
+    this.sortingHandler.register(this.messageRouter);
+
+    this.alchemyHandler = new AlchemyHandler(this);
+    this.alchemyHandler.register(this.messageRouter);
+
+    this.fishmongerHandler = new FishmongerHandler(this);
+    this.fishmongerHandler.register(this.messageRouter);
+
+    // Respawn handler
+    this.messageRouter.register(MSG.PLAYER_RESPAWN, (player) => {
+      this.handlePlayerRespawn(player);
+    });
+
+    // Town recall handler (hold H to teleport back to town)
+    this.messageRouter.register(MSG.TOWN_RECALL, (player) => {
+      this.handleTownRecall(player);
+    });
+
+    // Station travel (map fast-travel to placed stations)
+    this.messageRouter.register(MSG.STATION_TRAVEL, (player, data) => {
+      this.handleStationTravel(player, data);
+    });
+
+    // Station placement handlers (ghost placement confirm/cancel)
+    this.messageRouter.register(MSG.STATION_PLACE, (player, data) => {
+      this.handleStationPlace(player, data);
+    });
+    this.messageRouter.register(MSG.STATION_PLACE_CANCEL, (player) => {
+      this.handleStationPlaceCancel(player);
+    });
+  }
+
+  handlePlayerRespawn(playerConn) {
+    const entity = this.entityManager.get(playerConn.id);
+    if (!entity) return;
+
+    const health = entity.getComponent(HealthComponent);
+    if (!health || health.isAlive()) return; // not dead
+
+    // Reset health
+    health.current = health.max;
+    health.invulnerable = false;
+    health._deathHandled = false;
+
+    // Teleport to town spawn
+    const pos = entity.getComponent(PositionComponent);
+    const spawnX = 512 + (Math.random() - 0.5) * 64;
+    const spawnY = 512 + (Math.random() - 0.5) * 64;
+    pos.x = spawnX;
+    pos.y = spawnY;
+
+    // Reset velocity
+    const vel = entity.getComponent(VelocityComponent);
+    if (vel) { vel.dx = 0; vel.dy = 0; }
+
+    // Dismount if riding
+    const pc = entity.getComponent(PlayerComponent);
+    if (pc && pc.mounted) {
+      pc.mounted = false;
+      playerConn.emit(MSG.HORSE_UPDATE, { hasHorse: pc.hasHorse, mounted: false });
+    }
+
+    // Notify the player
+    playerConn.emit(MSG.PLAYER_RESPAWN, {
+      x: spawnX,
+      y: spawnY,
+      hp: health.current,
+      maxHp: health.max,
+    });
+
+    console.log(`[GameServer] Player respawned: ${playerConn.name}`);
+  }
+
+  handleTownRecall(playerConn) {
+    const entity = this.entityManager.get(playerConn.id);
+    if (!entity) return;
+
+    const health = entity.getComponent(HealthComponent);
+    if (!health || !health.isAlive()) return; // must be alive
+
+    // Teleport to town spawn
+    const pos = entity.getComponent(PositionComponent);
+    const spawnX = 512 + (Math.random() - 0.5) * 64;
+    const spawnY = 512 + (Math.random() - 0.5) * 64;
+    pos.x = spawnX;
+    pos.y = spawnY;
+
+    // Reset velocity
+    const vel = entity.getComponent(VelocityComponent);
+    if (vel) { vel.dx = 0; vel.dy = 0; }
+
+    // Notify the player (reuse respawn message — client handles teleport + camera snap)
+    playerConn.emit(MSG.PLAYER_RESPAWN, {
+      x: spawnX,
+      y: spawnY,
+      hp: health.current,
+      maxHp: health.max,
+    });
+
+    console.log(`[GameServer] Player recalled to town: ${playerConn.name}`);
+  }
+
+  handleStationTravel(playerConn, data) {
+    const entity = this.entityManager.get(playerConn.id);
+    if (!entity) return;
+
+    const health = entity.getComponent(HealthComponent);
+    if (!health || !health.isAlive()) return;
+
+    const pc = entity.getComponent(PlayerComponent);
+    if (pc && pc.activeBattle) return;
+
+    // Validate station exists
+    const targetX = data?.x;
+    const targetY = data?.y;
+    if (typeof targetX !== 'number' || typeof targetY !== 'number') return;
+
+    // Teleport to station location (offset slightly so player isn't on top)
+    const pos = entity.getComponent(PositionComponent);
+    pos.x = targetX + (Math.random() - 0.5) * 48;
+    pos.y = targetY + 48;
+
+    const vel = entity.getComponent(VelocityComponent);
+    if (vel) { vel.dx = 0; vel.dy = 0; }
+
+    playerConn.emit(MSG.PLAYER_RESPAWN, {
+      x: pos.x,
+      y: pos.y,
+      hp: health.current,
+      maxHp: health.max,
+    });
+
+    playerConn.emit(MSG.CHAT_RECEIVE, {
+      message: `Traveled to station at (${Math.round(targetX)}, ${Math.round(targetY)}).`,
+      sender: 'System',
+    });
+  }
+
+  handleStationPlace(playerConn, data) {
+    const entity = this.entityManager.get(playerConn.id);
+    if (!entity) return;
+
+    const pc = entity.getComponent(PlayerComponent);
+    if (!pc || !pc.pendingPlacement) return;
+
+    const { stationId } = pc.pendingPlacement;
+    const playerPos = entity.getComponent(PositionComponent);
+    const placeX = data?.x;
+    const placeY = data?.y;
+    if (placeX == null || placeY == null) return;
+
+    // Validate: within 120px of player
+    const dx = placeX - playerPos.x;
+    const dy = placeY - playerPos.y;
+    if (Math.sqrt(dx * dx + dy * dy) > 120) {
+      playerConn.emit(MSG.CRAFT_RESULT, { success: false, message: 'Too far away' });
+      return;
+    }
+
+    // Validate: not on solid tile (check center + corners of station)
+    if (this.tileCollisionMap && this.tileCollisionMap.isSolid(placeX, placeY)) {
+      playerConn.emit(MSG.CRAFT_RESULT, { success: false, message: 'Cannot place here' });
+      return;
+    }
+
+    // Validate: land plot ownership (if placing inside a plot, must own it)
+    for (const plotDef of Object.values(LAND_PLOTS)) {
+      if (placeX >= plotDef.x && placeX < plotDef.x + plotDef.width &&
+          placeY >= plotDef.y && placeY < plotDef.y + plotDef.height) {
+        if (!pc.ownedPlots.includes(plotDef.id)) {
+          playerConn.emit(MSG.CRAFT_RESULT, { success: false, message: 'You do not own this plot' });
+          return;
+        }
+        break;
+      }
+    }
+
+    // Spawn the station (chest vs regular)
+    const stationDef = STATION_DB[stationId];
+    const stationEntity = (stationDef && stationDef.isChest)
+      ? EntityFactory.createChest(stationId, placeX, placeY)
+      : EntityFactory.createCraftingStation(stationId, placeX, placeY, 1);
+    if (stationEntity) {
+      this.entityManager.add(stationEntity);
+
+      // Persist to chunk
+      const chunkX = Math.floor(placeX / CHUNK_PIXEL_SIZE);
+      const chunkY = Math.floor(placeY / CHUNK_PIXEL_SIZE);
+      const chunkKey = `${chunkX},${chunkY}`;
+      const chunk = this.worldManager.chunkManager.getChunk(chunkX, chunkY);
+      if (chunk) {
+        const structEntry = {
+          stationId,
+          x: placeX,
+          y: placeY,
+          level: 1,
+          isChest: !!(stationDef && stationDef.isChest),
+          chest: null,
+          placedBy: playerConn.id,
+          isTownStation: false,
+        };
+        chunk.structures.push(structEntry);
+        const idx = chunk.structures.length - 1;
+        chunk.modified = true;
+
+        stationEntity.structureChunkKey = chunkKey;
+        stationEntity.structureIndex = idx;
+        this.structureSpawnSystem.trackSpawned(chunkKey, idx, stationEntity.id);
+
+        // Add to global station registry for map display
+        if (this.stationRegistry) {
+          const regKey = `${chunkKey}:${idx}`;
+          const entry = { x: placeX, y: placeY, stationId, name: stationDef?.name || stationId };
+          this.stationRegistry.set(regKey, entry);
+          // Broadcast to all players
+          for (const [, conn] of this.players) {
+            conn.emit(MSG.STATION_LIST, { add: { id: regKey, ...entry } });
+          }
+        }
+      }
+    }
+
+    pc.pendingPlacement = null;
+    playerConn.emit(MSG.CRAFT_RESULT, {
+      success: true,
+      results: [{ itemId: stationId, count: 1 }],
+      placed: true,
+    });
+  }
+
+  handleStationPlaceCancel(playerConn) {
+    const entity = this.entityManager.get(playerConn.id);
+    if (!entity) return;
+
+    const pc = entity.getComponent(PlayerComponent);
+    if (!pc || !pc.pendingPlacement) return;
+
+    // Refund ingredients
+    const inv = entity.getComponent(InventoryComponent);
+    if (inv && pc.pendingPlacement.ingredients) {
+      for (const ing of pc.pendingPlacement.ingredients) {
+        inv.addItem(ing.itemId, ing.count);
+      }
+      playerConn.emit(MSG.INVENTORY_UPDATE, { slots: inv.serialize().slots });
+    }
+
+    pc.pendingPlacement = null;
+  }
+
+  async init() {
+    await this.worldManager.init();
+    await this.playerRepo.init();
+    await this.landPlotHandler.init();
+
+    // Combat resolver
+    this.combatResolver = new CombatResolver(this.io);
+    this.skillExecutor = new SkillExecutor(this.combatResolver, this);
+
+    // Set up collision
+    this.tileCollisionMap = new TileCollisionMap(this.worldManager.chunkManager);
+    const tileCollisionMap = this.tileCollisionMap;
+
+    // Register ECS systems in priority order
+    this.systemManager.add(new StatSystem());             // 8: derive stats before combat
+    this.systemManager.add(new AISystem());              // 5: AI decides movement
+    this.systemManager.add(new MovementSystem());         // 10: apply velocity
+    this.systemManager.add(new ProjectileSystem());       // 11: projectile flight + hit detection
+    this.systemManager.add(new StatusEffectSystem());     // 12: tick status effects
+    this.systemManager.add(new SkillSystem());             // 13: tick skill cooldowns
+    this.systemManager.add(new DamageZoneSystem());        // 14: tick damage zones
+    this.systemManager.add(new CombatSystem(this.combatResolver)); // 15: process attacks
+    this.systemManager.add(new CollisionSystem(tileCollisionMap)); // 20: resolve collisions
+
+    const healthSystem = new HealthSystem(this.io);
+    const lootSystem = new LootSystem(this.io);
+    this.resourceSpawnSystem = new ResourceSpawnSystem();
+    this.structureSpawnSystem = new StructureSpawnSystem();
+    this.questTrackingSystem = new QuestTrackingSystem(this);
+
+    // Wire death event: health system -> loot system + resource depletion
+    healthSystem.onDeath((entity, entityManager) => {
+      lootSystem.onEntityDeath(entity, entityManager);
+      // Quest kill tracking
+      if (entity.hasTag('enemy')) {
+        this.questTrackingSystem.onEnemyKill(entity, entityManager);
+      }
+      if (entity.hasTag('resource')) {
+        this.resourceSpawnSystem.onResourceDepleted(entity, entityManager);
+        // Update chunk data so respawn timer works
+        const resNode = entity.getComponent(ResourceNodeComponent);
+        if (resNode && resNode.chunkKey) {
+          const [cx, cy] = resNode.chunkKey.split(',').map(Number);
+          const chunk = this.worldManager.chunkManager.getChunk(cx, cy);
+          if (chunk && chunk.resources[resNode.resourceIndex]) {
+            chunk.resources[resNode.resourceIndex].depleted = true;
+            chunk.resources[resNode.resourceIndex].depletedAt = Date.now() / 1000;
+            chunk.modified = true;
+          }
+        }
+      }
+      // Reset summoning shrine when boss dies
+      if (entity.isBoss) {
+        const altars = entityManager.getByTag('station');
+        for (const altar of altars) {
+          const sc = altar.getComponent(CraftingStationComponent);
+          if (sc?.stationId === 'boss_altar' && altar.linkedBossId === entity.id) {
+            altar.altarState = 'idle';
+            altar.linkedBossId = null;
+            this.io.emit(MSG.BOSS_DEFEAT, { bossId: entity.id });
+            break;
+          }
+        }
+      }
+    });
+
+    this.systemManager.add(healthSystem);                 // 25: detect deaths
+    this.systemManager.add(lootSystem);                   // 26: drop loot
+    this.systemManager.add(this.structureSpawnSystem);     // 47: spawn structures
+    this.systemManager.add(this.resourceSpawnSystem);     // 48: spawn resources
+    this.systemManager.add(new SpawnSystem());            // 50: spawn enemies
+    this.systemManager.add(new DespawnSystem());          // 51: despawn far enemies
+    this.systemManager.add(this.questTrackingSystem);    // 90: quest tracking
+
+    // Migrate town stations into chunk persistence
+    await this._migrateTownStations();
+
+    // Initialize town NPCs
+    await this.townManager.init();
+    this.townManager.spawnNPCs(this.entityManager);
+
+    // Global station registry — persists across chunk load/unload for map display
+    this.stationRegistry = new Map(); // "chunkKey:idx" -> { x, y, stationId, name }
+
+    console.log('[GameServer] ECS + Combat + AI + Resources + Crafting + Town initialized');
+  }
+
+  start() {
+    console.log(`[GameServer] Starting at ${TICK_RATE} TPS (${TICK_MS}ms per tick)`);
+    this.tickInterval = setInterval(() => this.tick(), TICK_MS);
+
+    // Auto-save every 30 seconds (structures + players)
+    this.autoSaveInterval = setInterval(() => {
+      if (this.structureSpawnSystem) {
+        this.structureSpawnSystem.syncAllChestContents(this.worldManager);
+      }
+      this.saveAllPlayers();
+    }, 30000);
+  }
+
+  async stop() {
+    if (this.tickInterval) {
+      clearInterval(this.tickInterval);
+      this.tickInterval = null;
+    }
+    if (this.autoSaveInterval) {
+      clearInterval(this.autoSaveInterval);
+      this.autoSaveInterval = null;
+    }
+    // Flush structure/chest data to chunks before world save
+    if (this.structureSpawnSystem) {
+      this.structureSpawnSystem.syncAllChestContents(this.worldManager);
+    }
+    // Final save for all connected players
+    await this.saveAllPlayers();
+  }
+
+  tick() {
+    try {
+      const now = Date.now();
+      const dt = (now - this.lastTick) / 1000;
+      this.lastTick = now;
+      this.tickCount++;
+
+      // Run ECS systems
+      this.systemManager.update(dt, this.entityManager, { worldManager: this.worldManager, combatResolver: this.combatResolver });
+
+      // Destroy marked entities
+      this.entityManager.flushDestroyed();
+
+      // Register newly discovered stations into global registry
+      if (this.structureSpawnSystem && this.stationRegistry) {
+        const pending = this.structureSpawnSystem.pendingRegistrations;
+        for (const s of pending) {
+          if (!this.stationRegistry.has(s.key)) {
+            this.stationRegistry.set(s.key, { x: s.x, y: s.y, stationId: s.stationId, name: s.name });
+            // Broadcast this addition to all connected players
+            for (const [, conn] of this.players) {
+              conn.emit(MSG.STATION_LIST, { add: { id: s.key, x: s.x, y: s.y, stationId: s.stationId, name: s.name } });
+            }
+          }
+        }
+        pending.length = 0;
+      }
+
+      // Passive pet healing: every 5 seconds (100 ticks at 20 TPS), heal 2% max HP
+      if (this.tickCount % 100 === 0) {
+        this._tickPetHealing();
+      }
+
+      // Broadcast state to all players
+      this.broadcastState();
+    } catch (err) {
+      console.error('[GameServer] Tick error:', err.stack || err);
+    }
+  }
+
+  _tickPetHealing() {
+    for (const [, playerConn] of this.players) {
+      const entity = this.getPlayerEntity(playerConn.id);
+      if (!entity) continue;
+      const pc = entity.getComponent(PlayerComponent);
+      if (!pc || !pc.petCodex || pc.petCodex.length === 0) continue;
+
+      let healed = false;
+      for (const petData of pc.petCodex) {
+        if (!petData || !petData.petId || petData.fainted) continue;
+        if (petData.currentHp >= petData.maxHp) continue;
+
+        const healAmt = Math.max(1, Math.floor(petData.maxHp * 0.02));
+        petData.currentHp = Math.min(petData.maxHp, petData.currentHp + healAmt);
+        healed = true;
+      }
+
+      if (healed) {
+        playerConn.emit(MSG.PET_CODEX_UPDATE, { petCodex: pc.petCodex, petTeam: pc.petTeam });
+      }
+    }
+  }
+
+  broadcastState() {
+    // --- Phase 1: Build spatial index of all entities by chunk ---
+    const entityChunks = new Map(); // "cx,cy" -> [entity, ...]
+
+    const addToChunkIndex = (entity) => {
+      const pos = entity.getComponent(PositionComponent);
+      if (!pos) return;
+      const cx = Math.floor(pos.x / CHUNK_PIXEL_SIZE);
+      const cy = Math.floor(pos.y / CHUNK_PIXEL_SIZE);
+      const key = `${cx},${cy}`;
+      let list = entityChunks.get(key);
+      if (!list) {
+        list = [];
+        entityChunks.set(key, list);
+      }
+      list.push(entity);
+    };
+
+    // Index all broadcastable entity types by chunk
+    const tags = ['player', 'enemy', 'horse', 'resource', 'npc', 'station', 'projectile', 'damage_zone'];
+    for (const tag of tags) {
+      const entities = this.entityManager.getByTag(tag);
+      for (const entity of entities) {
+        addToChunkIndex(entity);
+      }
+    }
+
+    // --- Phase 2: Serialize entity state (cached per entity per tick) ---
+    const stateCache = new Map(); // entityId -> state object
+
+    const serializeEntity = (entity) => {
+      let state = stateCache.get(entity.id);
+      if (state) return state;
+
+      if (entity.hasTag('player')) {
+        const pos = entity.getComponent(PositionComponent);
+        const pc = entity.getComponent(PlayerComponent);
+        const name = entity.getComponent(NameComponent);
+        const vel = entity.getComponent(VelocityComponent);
+        const health = entity.getComponent(HealthComponent);
+        const stats = entity.getComponent(StatsComponent);
+        state = {
+          id: entity.id, type: 'player',
+          name: name ? name.name : 'Unknown', color: pc.color,
+          x: pos.x, y: pos.y,
+          velocityX: vel ? vel.dx : 0, velocityY: vel ? vel.dy : 0,
+          facing: pc.facing,
+          hp: health ? health.current : 0, maxHp: health ? health.max : 0,
+          level: stats ? stats.level : 1, mounted: pc.mounted || false,
+        };
+      } else if (entity.hasTag('enemy')) {
+        const pos = entity.getComponent(PositionComponent);
+        const name = entity.getComponent(NameComponent);
+        const vel = entity.getComponent(VelocityComponent);
+        const health = entity.getComponent(HealthComponent);
+        const ai = entity.getComponent(AIComponent);
+        const col = entity.getComponent(ColliderComponent);
+        state = {
+          id: entity.id, type: 'enemy',
+          name: name ? name.name : 'Enemy',
+          color: entity.enemyConfig ? entity.enemyConfig.color : '#e74c3c',
+          size: col ? col.width : 24,
+          x: pos.x, y: pos.y,
+          velocityX: vel ? vel.dx : 0, velocityY: vel ? vel.dy : 0,
+          hp: health ? health.current : 0, maxHp: health ? health.max : 0,
+          aiState: ai ? ai.state : 'idle',
+          isBoss: entity.isBoss || false,
+          enemyId: entity.enemyConfig ? entity.enemyConfig.id : null,
+        };
+      } else if (entity.hasTag('horse')) {
+        const pos = entity.getComponent(PositionComponent);
+        const name = entity.getComponent(NameComponent);
+        const vel = entity.getComponent(VelocityComponent);
+        const col = entity.getComponent(ColliderComponent);
+        const horse = entity.getComponent(HorseComponent);
+        state = {
+          id: entity.id, type: 'horse',
+          name: name ? name.name : 'Horse',
+          color: entity.horseConfig ? entity.horseConfig.color : '#8B6C42',
+          size: col ? col.width : 30,
+          x: pos.x, y: pos.y,
+          velocityX: vel ? vel.dx : 0, velocityY: vel ? vel.dy : 0,
+          tamed: horse ? horse.tamed : false,
+          ownerId: horse ? horse.ownerId : null,
+          mounted: horse ? horse.mounted : false,
+        };
+      } else if (entity.hasTag('resource')) {
+        const pos = entity.getComponent(PositionComponent);
+        const name = entity.getComponent(NameComponent);
+        const health = entity.getComponent(HealthComponent);
+        const col = entity.getComponent(ColliderComponent);
+        const resNode = entity.getComponent(ResourceNodeComponent);
+        state = {
+          id: entity.id, type: 'resource',
+          name: name ? name.name : 'Resource',
+          color: entity.resourceData?.color || '#8B4513',
+          size: col ? col.width : 24,
+          x: pos.x, y: pos.y,
+          hp: health ? health.current : 0, maxHp: health ? health.max : 0,
+          resourceId: resNode ? resNode.resourceId : null,
+          tool: resNode ? resNode.tool : 'none',
+        };
+      } else if (entity.hasTag('npc')) {
+        const pos = entity.getComponent(PositionComponent);
+        const name = entity.getComponent(NameComponent);
+        const col = entity.getComponent(ColliderComponent);
+        const npc = entity.getComponent(NPCComponent);
+        const health = entity.getComponent(HealthComponent);
+        state = {
+          id: entity.id, type: 'npc',
+          name: name ? name.name : 'NPC',
+          color: entity.npcData?.color || '#d4a574',
+          size: col ? col.width : 26,
+          x: pos.x, y: pos.y,
+          npcType: npc ? npc.npcType : 'quest_giver',
+          npcId: npc ? npc.npcId : null,
+          hp: health ? health.current : 0, maxHp: health ? health.max : 0,
+        };
+      } else if (entity.hasTag('station')) {
+        const pos = entity.getComponent(PositionComponent);
+        const name = entity.getComponent(NameComponent);
+        const col = entity.getComponent(ColliderComponent);
+        const sc = entity.getComponent(CraftingStationComponent);
+        state = {
+          id: entity.id, type: 'station',
+          name: name ? name.name : 'Station',
+          color: sc && STATION_DB[sc.stationId] ? STATION_DB[sc.stationId].color : '#8B6914',
+          size: col ? col.width : 40,
+          x: pos.x, y: pos.y,
+          stationId: sc ? sc.stationId : null,
+          stationLevel: sc ? sc.level : 1,
+          isChest: sc && STATION_DB[sc.stationId] ? !!STATION_DB[sc.stationId].isChest : false,
+          altarActive: entity.altarState === 'summoning' || false,
+        };
+      } else if (entity.hasTag('projectile')) {
+        const pos = entity.getComponent(PositionComponent);
+        const vel = entity.getComponent(VelocityComponent);
+        const proj = entity.getComponent(ProjectileComponent);
+        state = {
+          id: entity.id, type: 'projectile',
+          projectileType: proj ? proj.projectileType : 'arrow',
+          x: pos.x, y: pos.y,
+          velocityX: vel ? vel.dx : 0, velocityY: vel ? vel.dy : 0,
+        };
+      } else if (entity.hasTag('damage_zone')) {
+        const pos = entity.getComponent(PositionComponent);
+        const zone = entity.getComponent(DamageZoneComponent);
+        state = {
+          id: entity.id, type: 'damage_zone',
+          zoneType: zone.zoneType,
+          x: pos.x, y: pos.y, radius: zone.radius,
+        };
+      }
+
+      if (state) stateCache.set(entity.id, state);
+      return state;
+    };
+
+    // --- Phase 3: Per-player AOI broadcast ---
+    for (const player of this.players.values()) {
+      const playerEntity = this.entityManager.get(player.id);
+      if (!playerEntity) continue;
+
+      const playerPos = playerEntity.getComponent(PositionComponent);
+      const pc = playerEntity.getComponent(PlayerComponent);
+      const pcx = Math.floor(playerPos.x / CHUNK_PIXEL_SIZE);
+      const pcy = Math.floor(playerPos.y / CHUNK_PIXEL_SIZE);
+
+      // Gather visible entities from chunks within VIEW_DISTANCE
+      const visibleStates = {};
+      for (let dy = -VIEW_DISTANCE; dy <= VIEW_DISTANCE; dy++) {
+        for (let dx = -VIEW_DISTANCE; dx <= VIEW_DISTANCE; dx++) {
+          const key = `${pcx + dx},${pcy + dy}`;
+          const entities = entityChunks.get(key);
+          if (!entities) continue;
+          for (const entity of entities) {
+            const state = serializeEntity(entity);
+            if (state) visibleStates[entity.id] = state;
+          }
+        }
+      }
+
+      // Compute delta against this player's last sent state
+      const delta = this.computeDelta(player.lastSentState, visibleStates);
+
+      if (delta) {
+        player.emit(MSG.GAME_STATE_DELTA, {
+          tick: this.tickCount,
+          yourId: player.id,
+          lastInputSeq: pc.lastInputSeq,
+          ...delta,
+        });
+      }
+
+      // Store by reference — state objects are freshly created each tick
+      player.lastSentState = visibleStates;
+    }
+  }
+
+  computeDelta(prev, current) {
+    if (!prev) {
+      return { type: 'full', entities: current };
+    }
+
+    const updated = {};
+    const removed = [];
+    let hasChanges = false;
+
+    for (const id in current) {
+      const curr = current[id];
+      const old = prev[id];
+      if (!old) {
+        updated[id] = curr;
+        hasChanges = true;
+      } else {
+        const changes = this.diffEntity(old, curr);
+        if (changes) {
+          updated[id] = changes;
+          updated[id].id = id;
+          hasChanges = true;
+        }
+      }
+    }
+
+    for (const id in prev) {
+      if (!current[id]) {
+        removed.push(id);
+        hasChanges = true;
+      }
+    }
+
+    if (!hasChanges) return null;
+    return { type: 'delta', updated, removed };
+  }
+
+  diffEntity(prev, curr) {
+    let diff = null;
+    for (const key in curr) {
+      if (prev[key] !== curr[key]) {
+        if (!diff) diff = {};
+        diff[key] = curr[key];
+      }
+    }
+    return diff;
+  }
+
+  async onPlayerJoin(playerConn) {
+    // Clean up any stale entity/connection for this player (handles reconnect race conditions)
+    const existingEntity = this.entityManager.get(playerConn.id);
+    if (existingEntity) {
+      console.log(`[GameServer] Cleaning up stale entity for reconnecting player ${playerConn.id.slice(0, 8)}`);
+      this.entityManager.remove(playerConn.id);
+    }
+    const existingConn = this.players.get(playerConn.id);
+    if (existingConn && existingConn !== playerConn) {
+      console.log(`[GameServer] Disconnecting stale socket for ${playerConn.id.slice(0, 8)}`);
+      existingConn.connected = false;
+      if (existingConn.socket && existingConn.socket.connected) {
+        existingConn.socket.disconnect(true);
+      }
+      this.players.delete(playerConn.id);
+    }
+
+    // Check for existing save
+    const saveData = await this.playerRepo.load(playerConn.id);
+    let spawnX, spawnY;
+    let isReturning = false;
+
+    if (saveData) {
+      // Returning player — restore name, color, position
+      isReturning = true;
+      playerConn.name = saveData.name || playerConn.name;
+      playerConn.color = saveData.color || playerConn.color;
+      spawnX = saveData.position?.x ?? 512;
+      spawnY = saveData.position?.y ?? 512;
+    } else {
+      // New player — random spawn near town
+      spawnX = 512 + (Math.random() - 0.5) * 64;
+      spawnY = 512 + (Math.random() - 0.5) * 64;
+    }
+
+    // Create ECS entity for the player
+    const entity = EntityFactory.createPlayer(
+      playerConn.id, playerConn.socket.id,
+      playerConn.name, playerConn.color,
+      spawnX, spawnY
+    );
+
+    // Restore saved component data for returning players
+    if (saveData) {
+      this.restorePlayerData(entity, saveData);
+    }
+
+    this.entityManager.add(entity);
+    this.players.set(playerConn.id, playerConn);
+
+    // Ensure chunks around spawn are loaded
+    const chunkX = Math.floor(spawnX / CHUNK_PIXEL_SIZE);
+    const chunkY = Math.floor(spawnY / CHUNK_PIXEL_SIZE);
+    await this.worldManager.getChunksAround(chunkX, chunkY);
+
+    // Send join data
+    const joinPc = entity.getComponent(PlayerComponent);
+    playerConn.emit(MSG.PLAYER_JOIN, {
+      id: playerConn.id,
+      name: playerConn.name,
+      color: playerConn.color,
+      x: spawnX,
+      y: spawnY,
+      hasHorse: joinPc ? joinPc.hasHorse : false,
+      ownedPlots: joinPc ? (joinPc.ownedPlots || []) : [],
+      petTeam: joinPc ? (joinPc.petTeam || [null, null, null]) : [null, null, null],
+      petCodex: joinPc ? (joinPc.petCodex || []) : [],
+    });
+
+    // Send current land plot registry
+    if (this.landPlotHandler) {
+      playerConn.emit(MSG.LAND_PURCHASE, { registry: this.landPlotHandler.getRegistry() });
+    }
+
+    // Send existing player list
+    const existingPlayers = [];
+    for (const [id, p] of this.players) {
+      if (id !== playerConn.id) {
+        const e = this.entityManager.get(id);
+        if (e) {
+          const pos = e.getComponent(PositionComponent);
+          const pc = e.getComponent(PlayerComponent);
+          const nm = e.getComponent(NameComponent);
+          existingPlayers.push({
+            id, name: nm.name, color: pc.color, x: pos.x, y: pos.y,
+          });
+        }
+      }
+    }
+    playerConn.emit(MSG.PLAYER_LIST, existingPlayers);
+
+    // Send initial stats, inventory, equipment
+    const statsComp = entity.getComponent(StatsComponent);
+    const invComp = entity.getComponent(InventoryComponent);
+    const equipComp = entity.getComponent(EquipmentComponent);
+    // Recalc equip bonuses before sending stats so client gets correct derived values
+    if (statsComp && equipComp) statsComp.recalcEquipBonuses(equipComp.slots);
+    if (statsComp) playerConn.emit(MSG.PLAYER_STATS, statsComp.serialize());
+    if (invComp) playerConn.emit(MSG.INVENTORY_UPDATE, { slots: invComp.serialize().slots });
+    if (equipComp) playerConn.emit(MSG.EQUIPMENT_UPDATE, equipComp.serialize());
+
+    // Initialize and send skills
+    const skillComp = entity.getComponent(SkillComponent);
+    if (skillComp) {
+      // Learn skills for current level (handles both new and legacy saves)
+      const level = statsComp ? statsComp.level : 1;
+      if (skillComp.learnedSkills.size === 0) {
+        skillComp.learnSkillsForLevel(level);
+        // Set default hotbar for first time
+        const defaultHotbar = getDefaultHotbar(level);
+        for (let i = 0; i < 5; i++) {
+          skillComp.hotbar[i] = defaultHotbar[i];
+        }
+      }
+      playerConn.emit(MSG.SKILL_UPDATE, {
+        learnedSkills: [...skillComp.learnedSkills],
+        hotbar: skillComp.hotbar,
+        cooldowns: skillComp.cooldowns,
+      });
+    }
+
+    // Send global station list for map display
+    if (this.stationRegistry && this.stationRegistry.size > 0) {
+      const stations = [];
+      for (const [id, s] of this.stationRegistry) {
+        stations.push({ id, x: s.x, y: s.y, stationId: s.stationId, name: s.name });
+      }
+      playerConn.emit(MSG.STATION_LIST, { stations });
+    }
+
+    // Notify others
+    playerConn.socket.broadcast.emit(MSG.PLAYER_JOIN, {
+      id: playerConn.id,
+      name: playerConn.name,
+      color: playerConn.color,
+      x: spawnX,
+      y: spawnY,
+    });
+
+    const tag = isReturning ? 'returning' : 'new';
+    console.log(`[GameServer] Player joined (${tag}): ${playerConn.name} (${playerConn.id.slice(0, 8)})`);
+  }
+
+  async onPlayerLeave(playerConn) {
+    // Guard: ignore stale disconnect if a newer connection has replaced this one
+    const currentConn = this.players.get(playerConn.id);
+    if (currentConn && currentConn !== playerConn) {
+      console.log(`[GameServer] Ignoring stale disconnect for ${playerConn.name} (${playerConn.id.slice(0, 8)})`);
+      return;
+    }
+
+    // Clean up PVP battle state
+    if (this.pvpBattleManager) {
+      this.pvpBattleManager.onPlayerLeave(playerConn.id);
+    }
+
+    // Clean up fishing state
+    this.fishingHandler.onPlayerLeave(playerConn.id);
+
+    // Clean up alchemy state
+    this.alchemyHandler.removePlayer(playerConn.id);
+
+    // Clean up fishmonger state
+    this.fishmongerHandler.removePlayer(playerConn.id);
+
+    // Clean up sorting state
+    this.sortingHandler.removePlayer(playerConn.id);
+
+    // Save player data before destroying entity
+    await this.savePlayer(playerConn);
+
+    this.players.delete(playerConn.id);
+    const entity = this.entityManager.get(playerConn.id);
+    if (entity) {
+      this.entityManager.remove(playerConn.id);
+    }
+    this.io.emit(MSG.PLAYER_LEAVE, { id: playerConn.id });
+    console.log(`[GameServer] Player left: ${playerConn.name} (${playerConn.id.slice(0, 8)})`);
+  }
+
+  // --- Persistence helpers ---
+
+  async savePlayer(playerConn) {
+    const entity = this.entityManager.get(playerConn.id);
+    if (!entity) return;
+
+    const pos = entity.getComponent(PositionComponent);
+    const health = entity.getComponent(HealthComponent);
+    const stats = entity.getComponent(StatsComponent);
+    const inv = entity.getComponent(InventoryComponent);
+    const equip = entity.getComponent(EquipmentComponent);
+    const skills = entity.getComponent(SkillComponent);
+    const quests = entity.getComponent(QuestComponent);
+
+    const pc = entity.getComponent(PlayerComponent);
+
+    const data = {
+      version: 1,
+      id: playerConn.id,
+      name: playerConn.name,
+      color: playerConn.color,
+      savedAt: Date.now(),
+      position: pos ? { x: pos.x, y: pos.y } : { x: 512, y: 512 },
+      health: health ? { current: health.current, max: health.max } : null,
+      stats: stats ? {
+        level: stats.level,
+        xp: stats.xp,
+        statPoints: stats.statPoints,
+        str: stats.str,
+        dex: stats.dex,
+        vit: stats.vit,
+        end: stats.end,
+        lck: stats.lck,
+      } : null,
+      inventory: inv ? inv.serialize() : null,
+      equipment: equip ? equip.serialize() : null,
+      skills: skills ? skills.serialize() : null,
+      quests: quests ? quests.serialize() : null,
+      hasHorse: pc ? pc.hasHorse : false,
+      ownedPlots: pc ? (pc.ownedPlots || []) : [],
+      petTeam: pc ? (pc.petTeam || [null, null, null]) : [null, null, null],
+      petCodex: pc ? (pc.petCodex || []) : [],
+    };
+
+    await this.playerRepo.save(playerConn.id, data);
+  }
+
+  restorePlayerData(entity, saveData) {
+    // Restore stats
+    if (saveData.stats) {
+      const stats = entity.getComponent(StatsComponent);
+      if (stats) {
+        stats.level = saveData.stats.level || 1;
+        stats.xp = saveData.stats.xp || 0;
+        stats.statPoints = saveData.stats.statPoints || 0;
+        stats.str = saveData.stats.str ?? stats.str;
+        stats.dex = saveData.stats.dex ?? stats.dex;
+        stats.vit = saveData.stats.vit ?? stats.vit;
+        stats.end = saveData.stats.end ?? stats.end;
+        stats.lck = saveData.stats.lck ?? stats.lck;
+      }
+    }
+
+    // Restore health (after stats so max can be recalculated by StatSystem)
+    if (saveData.health) {
+      const health = entity.getComponent(HealthComponent);
+      if (health) {
+        health.max = saveData.health.max || health.max;
+        health.current = Math.min(saveData.health.current ?? health.max, health.max);
+      }
+    }
+
+    // Restore inventory
+    if (saveData.inventory?.slots) {
+      const inv = entity.getComponent(InventoryComponent);
+      if (inv) {
+        for (let i = 0; i < inv.slotCount && i < saveData.inventory.slots.length; i++) {
+          inv.slots[i] = saveData.inventory.slots[i];
+        }
+      }
+    }
+
+    // Restore equipment (convert item IDs back to ITEM_DB entries)
+    if (saveData.equipment) {
+      const equip = entity.getComponent(EquipmentComponent);
+      if (equip) {
+        for (const [slot, data] of Object.entries(saveData.equipment)) {
+          if (!data) continue;
+          // New format: { id, gems, upgradeLevel, upgradeXp, pet fields, etc. }
+          if (typeof data === 'object' && data.id) {
+            const itemDef = ITEM_DB[data.id];
+            if (itemDef) {
+              // Restore ALL saved extra data (gems, upgrades, pet fields, rod parts, etc.)
+              const extra = {};
+              for (const key of Object.keys(data)) {
+                if (key === 'id') continue;
+                extra[key] = data[key];
+              }
+              equip.equip(itemDef, extra);
+            }
+          } else if (typeof data === 'string' && ITEM_DB[data]) {
+            // Old format: plain item ID string
+            equip.equip(ITEM_DB[data]);
+          }
+        }
+      }
+    }
+
+    // Restore skills
+    if (saveData.skills) {
+      const skills = entity.getComponent(SkillComponent);
+      if (skills) {
+        if (saveData.skills.learnedSkills) {
+          for (const id of saveData.skills.learnedSkills) {
+            skills.learnedSkills.add(id);
+          }
+        }
+        if (saveData.skills.hotbar) {
+          for (let i = 0; i < 5; i++) {
+            skills.hotbar[i] = saveData.skills.hotbar[i] || null;
+          }
+        }
+      }
+    }
+
+    // Restore quests
+    if (saveData.quests) {
+      const questComp = entity.getComponent(QuestComponent);
+      if (questComp) {
+        questComp.deserialize(saveData.quests);
+      }
+    }
+
+    // Restore horse ownership
+    if (saveData.hasHorse) {
+      const pc = entity.getComponent(PlayerComponent);
+      if (pc) pc.hasHorse = true;
+    }
+
+    // Restore land plot ownership
+    if (saveData.ownedPlots && saveData.ownedPlots.length > 0) {
+      const pc = entity.getComponent(PlayerComponent);
+      if (pc) pc.ownedPlots = saveData.ownedPlots;
+    }
+
+    // Restore pet codex and team
+    {
+      const pc = entity.getComponent(PlayerComponent);
+      if (pc) {
+        if (saveData.petCodex) {
+          // New format: codex exists
+          pc.petCodex = saveData.petCodex;
+          pc.petTeam = saveData.petTeam || [null, null, null];
+        } else {
+          // Migration: move pet_items from inventory into codex
+          const inv = entity.getComponent(InventoryComponent);
+          pc.petCodex = [];
+          const slotToCodex = {};
+
+          if (inv) {
+            for (let i = 0; i < inv.slotCount; i++) {
+              const slot = inv.slots[i];
+              if (!slot || slot.itemId !== 'pet_item') continue;
+              const petData = slot.extraData || slot;
+              if (!petData.petId) continue;
+              const codexIdx = pc.petCodex.length;
+              pc.petCodex.push({
+                petId: petData.petId,
+                nickname: petData.nickname || petData.petId,
+                level: petData.level || 1,
+                xp: petData.xp || 0,
+                currentHp: petData.currentHp || 50,
+                maxHp: petData.maxHp || 50,
+                learnedSkills: petData.learnedSkills || [],
+                fainted: petData.fainted || false,
+                isRare: petData.isRare || false,
+                bonusStats: petData.bonusStats || 0,
+              });
+              slotToCodex[i] = codexIdx;
+              inv.slots[i] = null;
+            }
+          }
+
+          // Check equipped weapon for pet
+          const equip = entity.getComponent(EquipmentComponent);
+          if (equip) {
+            const weapon = equip.getEquipped('weapon');
+            if (weapon?.isPet && weapon?.petId) {
+              pc.petCodex.push({
+                petId: weapon.petId,
+                nickname: weapon.nickname || weapon.petId,
+                level: weapon.level || 1,
+                xp: weapon.xp || 0,
+                currentHp: weapon.currentHp || 50,
+                maxHp: weapon.maxHp || 50,
+                learnedSkills: weapon.learnedSkills || [],
+                fainted: weapon.fainted || false,
+                isRare: weapon.isRare || false,
+                bonusStats: weapon.bonusStats || 0,
+              });
+              equip.unequip('weapon');
+            }
+          }
+
+          // Remap petTeam from inventory indices to codex indices
+          const oldTeam = saveData.petTeam || [null, null, null];
+          pc.petTeam = oldTeam.map(idx => idx !== null && slotToCodex[idx] !== undefined ? slotToCodex[idx] : null);
+        }
+      }
+    }
+  }
+
+  async saveAllPlayers() {
+    const promises = [];
+    for (const playerConn of this.players.values()) {
+      promises.push(this.savePlayer(playerConn));
+    }
+    if (promises.length > 0) {
+      await Promise.all(promises);
+      console.log(`[GameServer] Auto-saved ${promises.length} player(s)`);
+    }
+  }
+
+  async _migrateTownStations() {
+    for (const stationDef of TOWN_STATIONS) {
+      const cx = Math.floor(stationDef.x / CHUNK_PIXEL_SIZE);
+      const cy = Math.floor(stationDef.y / CHUNK_PIXEL_SIZE);
+      const chunk = await this.worldManager.getChunk(cx, cy);
+      if (!chunk) continue;
+
+      // Check if already migrated (dedup by stationId + position)
+      const alreadyExists = chunk.structures.some(
+        s => s.stationId === stationDef.stationId &&
+             s.x === stationDef.x && s.y === stationDef.y
+      );
+      if (alreadyExists) continue;
+
+      chunk.structures.push({
+        stationId: stationDef.stationId,
+        x: stationDef.x,
+        y: stationDef.y,
+        level: stationDef.level || 1,
+        isChest: false,
+        chest: null,
+        placedBy: null,
+        isTownStation: true,
+      });
+      chunk.modified = true;
+    }
+  }
+
+  // Helper: get entity for a player connection
+  getPlayerEntity(playerId) {
+    return this.entityManager.get(playerId);
+  }
+}

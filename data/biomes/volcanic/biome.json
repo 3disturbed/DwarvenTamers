@@ -1,0 +1,32 @@
+{
+  "id": "volcanic",
+  "name": "Volcanic Wasteland",
+  "tier": 5,
+  "colors": {
+    "primary": "#3a3a3a",
+    "secondary": "#ff4500",
+    "accent": "#2a2a2a"
+  },
+  "terrain": {
+    "elevationScale": 0.035,
+    "moistureScale": 0.015,
+    "treeChance": 0.01,
+    "rockChance": 0.15,
+    "waterLevel": 0.2,
+    "zones": {
+      "enabled": true,
+      "scale": 0.008,
+      "threshold": 0.55
+    }
+  },
+  "cave": {
+    "caveThreshold": 0.30,
+    "caveMinElevation": 0.45,
+    "caveMaxElevation": 0.75,
+    "caveScale": 0.06,
+    "caveMossChance": 0.0,
+    "caveCrystalChance": 0.4
+  },
+  "ambientLight": 0.5,
+  "music": "volcanic_theme"
+}
