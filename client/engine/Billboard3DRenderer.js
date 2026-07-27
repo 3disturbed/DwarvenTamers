@@ -4,6 +4,7 @@ import npcSprites from '../entities/NPCSprites.js';
 import playerSprites from '../entities/PlayerSprites.js';
 import resourceSprites from '../entities/ResourceSprites.js';
 import stationSprites from '../entities/StationSprites.js';
+import tileSprites from '../world/TileSprites.js';
 import { CHUNK_SIZE, TILE_SIZE } from '../../shared/Constants.js';
 import { TILE } from '../../shared/TileTypes.js';
 
@@ -84,11 +85,12 @@ export default class Billboard3DRenderer {
     this.scene.add(this.groundMesh);
 
     this.shadowTexture = this._createShadowTexture();
+    this.wallTexture = this._createWallTileTexture();
 
     this.wallGeometry = new THREE.BoxGeometry(TILE_SIZE, 1, TILE_SIZE);
     this.wallMaterial = new THREE.MeshStandardMaterial({
       color: 0xffffff,
-      map: this.groundTexture,
+      map: this.wallTexture,
       roughness: 0.95,
       metalness: 0.02,
     });
@@ -494,18 +496,42 @@ export default class Billboard3DRenderer {
     return t;
   }
 
+  _createWallTileTexture() {
+    const source = tileSprites.get(TILE.FLOOR_STONE)
+      || tileSprites.get(TILE.STONE)
+      || tileSprites.get(TILE.GRASS);
+
+    if (!source) return null;
+
+    const c = document.createElement('canvas');
+    c.width = TILE_SIZE;
+    c.height = TILE_SIZE;
+    const g = c.getContext('2d');
+    g.imageSmoothingEnabled = false;
+
+    const sx = source.width >= TILE_SIZE * 3 ? TILE_SIZE : 0;
+    const sy = source.height >= TILE_SIZE * 3 ? TILE_SIZE : 0;
+    g.drawImage(source, sx, sy, TILE_SIZE, TILE_SIZE, 0, 0, TILE_SIZE, TILE_SIZE);
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.magFilter = THREE.NearestFilter;
+    tex.minFilter = THREE.NearestFilter;
+    tex.generateMipmaps = false;
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(1, 1);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
   _acquireMesh(texture) {
     let mesh = this.pool[this.activeCount];
     if (!mesh) {
-      const material = new THREE.MeshStandardMaterial({
+      const material = new THREE.MeshBasicMaterial({
         map: texture,
         transparent: true,
         alphaTest: 0.28,
         side: THREE.DoubleSide,
-        emissive: 0x3e4f66,
-        emissiveIntensity: 0.34,
-        roughness: 0.9,
-        metalness: 0,
       });
       mesh = new THREE.Mesh(this.planeGeometry, material);
       mesh.castShadow = false;
