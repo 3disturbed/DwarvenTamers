@@ -39,6 +39,7 @@ function startGame() {
   const saveDialog = document.getElementById('save-dialog');
   let loaderReady = false;
   let brandFinished = !brandSplash;
+  let brandHandoffDone = !brandSplash;
   let gameStarted = false;
   let menuShown = false;
 
@@ -67,18 +68,27 @@ function startGame() {
     }
   };
 
+  const handoffBrandSplash = () => {
+    if (brandHandoffDone) return;
+    brandHandoffDone = true;
+    brandFinished = true;
+    splash?.classList.remove('pre-splash-hidden');
+    if (brandSplash) {
+      brandSplash.classList.add('fade-out');
+      window.setTimeout(() => {
+        brandSplash.hidden = true;
+        brandSplash.remove();
+      }, 720);
+    }
+    maybeShowMainMenu();
+  };
+
   if (splash) {
     splash.classList.add('pre-splash-hidden');
   }
 
   if (brandSplash) {
-    setTimeout(() => {
-      brandSplash.classList.add('fade-out');
-      splash?.classList.remove('pre-splash-hidden');
-      setTimeout(() => brandSplash.remove(), 750);
-      brandFinished = true;
-      maybeShowMainMenu();
-    }, BRAND_SPLASH_MS);
+    window.setTimeout(handoffBrandSplash, BRAND_SPLASH_MS);
   }
 
   // Track sprite loading progress
