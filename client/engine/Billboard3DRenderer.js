@@ -421,8 +421,21 @@ export default class Billboard3DRenderer {
       const sprite = station.stationId ? stationSprites.get(station.stationId) : null;
       if (!sprite) continue;
       const texture = this._getTexture(sprite, `station:${station.stationId}`);
+      if (station.stationId === 'cooking_fire') {
+        this._placeFlatSprite(texture, station.x, station.y, station.size || 40);
+        continue;
+      }
       this._placeBillboard(texture, station.x, station.y, station.size || 40, 0);
     }
+  }
+
+  _placeFlatSprite(texture, worldX, worldY, size) {
+    const mesh = this._acquireMesh(texture);
+    mesh.visible = true;
+    mesh.scale.set(size, size, 1);
+    mesh.position.set(worldX, 0.12, worldY);
+    mesh.rotation.set(-Math.PI / 2, 0, 0);
+    mesh.material.opacity = 1;
   }
 
   _renderNpcs(npcs) {
