@@ -3,7 +3,7 @@ import { ITEM_DB } from '../shared/ItemTypes.js';
 import { SKILL_DB } from '../shared/SkillTypes.js';
 import { STATION_DB } from '../shared/StationTypes.js';
 import { ENEMY_IDS } from '../client/entities/EnemySprites.js';
-import { RESOURCE_IDS } from '../client/entities/ResourceSprites.js';
+import resourceSprites, { RESOURCE_IDS } from '../client/entities/ResourceSprites.js';
 import { NPC_TYPES } from '../client/entities/NPCSprites.js';
 import { TILE_SPRITE_NAMES } from '../client/world/TileSprites.js';
 import { UI_ICON_IDS } from '../client/ui/UISprites.js';
@@ -48,4 +48,13 @@ for (const category of ['letter', 'box', 'parcel', 'delicate']) {
   }
 }
 console.log('  [PASS] sorting: 20 referenced sprites');
+
+if (resourceSprites.getDrawSize('berry_bush') !== 21 ||
+    resourceSprites.getDrawSize('copper_node') !== 21 ||
+    resourceSprites.getDrawSize('wood_oak') !== 32 ||
+    resourceSprites.getDrawSize('flax_plant') !== 64) {
+  throw new Error('Resource draw-size categories are incorrect');
+}
+console.log('  [PASS] resource draw sizes: compact nodes 1/3, trees 1/2');
+
 console.log(`\n  Results: ${checked} assets checked, 0 missing`);

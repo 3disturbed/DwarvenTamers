@@ -43,6 +43,20 @@ const FORAGE_IDS = new Set([
   'berry_bush', 'flax_plant', 'mushroom_cluster', 'thistle',
 ]);
 
+const TREE_IDS = new Set([
+  'wood_oak', 'wood_pine', 'wood_dark_oak', 'ancient_tree', 'frost_pine',
+]);
+
+const COMPACT_NODE_IDS = new Set([
+  'berry_bush', 'loose_stone', 'stone_node',
+  'copper_node', 'tin_node', 'iron_deposit', 'silver_vein',
+  'obsidian_node', 'obsidian_large', 'flametal_node',
+  'cave_copper_vein', 'cave_tin_vein', 'cave_iron_vein',
+  'cave_coal_deposit', 'cave_silver_vein', 'cave_iron_scrap_pile',
+  'cave_obsidian_vein', 'cave_crystal_cluster', 'cave_flametal_vein',
+  'cave_sulfite_deposit',
+]);
+
 class ResourceSprites {
   constructor() {
     this.sprites = {};
@@ -87,38 +101,55 @@ class ResourceSprites {
     return this.sprites[resourceId] || null;
   }
 
+  getDrawSize(resourceId) {
+    if (TREE_IDS.has(resourceId)) return 32;
+    if (COMPACT_NODE_IDS.has(resourceId)) return Math.round(64 / 3);
+    return 64;
+  }
+
   /**
    * Draw the shared presentation for resource nodes. Keeping this here makes
    * chunk-cached and live entity resources visually identical.
    */
-  draw(ctx, resourceId, x, y, size = 64) {
+  draw(ctx, resourceId, x, y, size = this.getDrawSize(resourceId)) {
     const sprite = this.get(resourceId);
     if (!sprite) return false;
 
     ctx.save();
+    const scale = size / 64;
 
     // A hand-painted footprint anchors even the smallest forage sprites.
     if (this.ground) {
       ctx.globalAlpha = FORAGE_IDS.has(resourceId) ? 0.58 : 0.78;
-      ctx.drawImage(this.ground, Math.round(x - 36), Math.round(y + 7), 72, 52);
+      const groundW = Math.max(24, Math.round(72 * scale));
+      const groundH = Math.max(16, Math.round(52 * scale));
+      ctx.drawImage(
+        this.ground,
+        Math.round(x - groundW / 2),
+        Math.round(y + size * 0.1),
+        groundW,
+        groundH
+      );
       ctx.globalAlpha = 1;
     }
 
     const glow = RESOURCE_GLOW[resourceId];
     if (glow) {
-      const aura = ctx.createRadialGradient(x, y + 9, 1, x, y + 9, 27);
+      const glowY = y + Math.max(3, 9 * scale);
+      const glowRadius = Math.max(10, 27 * scale);
+      const aura = ctx.createRadialGradient(x, glowY, 1, x, glowY, glowRadius);
       aura.addColorStop(0, `${glow}42`);
       aura.addColorStop(0.55, `${glow}18`);
       aura.addColorStop(1, `${glow}00`);
       ctx.fillStyle = aura;
       ctx.beginPath();
-      ctx.ellipse(x, y + 9, 30, 20, 0, 0, Math.PI * 2);
+      ctx.ellipse(x, glowY, glowRadius * 1.1, glowRadius * 0.74, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowColor = glow;
-      ctx.shadowBlur = 5;
+      ctx.shadowBlur = Math.max(2, 5 * scale);
     } else {
       ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
-      ctx.shadowBlur = 3;
+      ctx.shadowBlur = Math.max(1, 3 * scale);
     }
 
     const drawX = Math.round(x - size / 2);
