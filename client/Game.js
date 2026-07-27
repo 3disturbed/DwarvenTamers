@@ -900,6 +900,7 @@ export default class Game {
       this.inPetBattle || this.inPvpBattle || this.inSorting ||
       this.inAlchemy || this.inFishmonger || this.isDead;
     this.input.touch.setUiMode(touchUiActive);
+    this.touchControls.setSuppressed(touchUiActive);
 
     // Poll input
     const actions = this.input.update(this.camera, this.renderer);
@@ -2198,14 +2199,14 @@ export default class Game {
 
     // Screen-space UI (scaled)
     r.beginUI();
-    this.touchControls.render(ctx);
     this.renderHUD(r);
     this.renderPlayerArrows(ctx, r);
 
     // Skill bar (always visible, above health bar)
-    this.skillBar.position(r.logicalWidth, r.logicalHeight);
+    this.skillBar.position(r.logicalWidth, r.logicalHeight, this.input.isTouchDevice());
     this.skillBar.render(ctx, this.skills, this.input.getActiveMethod());
     this.skillBar.renderDashIndicator(ctx, this.skills, this.input.getActiveMethod());
+    this.touchControls.render(ctx);
 
     // Panels (screen space)
     this.characterPanel.render(ctx, this.inventory, this.equipment, this.playerStats);
@@ -2653,37 +2654,37 @@ export default class Game {
     const ctx = r.ctx;
     const w = r.logicalWidth;
     const h = r.logicalHeight;
-    // Solo status block sits beneath the persistent browser controls.
-    const status = this.localPlayer ? 'Adventure ready' : 'Preparing world…';
-    const statusColor = this.localPlayer ? '#e8d48b' : '#95a5a6';
-    r.drawText(status, 10, 72, statusColor, 11, 'left');
+    const touchMode = this.input.isTouchDevice();
+    if (!touchMode) {
+      const status = this.localPlayer ? 'Adventure ready' : 'Preparing world…';
+      const statusColor = this.localPlayer ? '#e8d48b' : '#95a5a6';
+      r.drawText(status, 10, 72, statusColor, 11, 'left');
 
-    let saveText = 'Autosave ready';
-    if (this.lastSavedAt) {
-      const seconds = Math.max(0, Math.floor((Date.now() - this.lastSavedAt) / 1000));
-      saveText = seconds < 5 ? 'Saved just now'
-        : seconds < 60 ? `Saved ${seconds}s ago`
-        : `Saved ${Math.floor(seconds / 60)}m ago`;
+      let saveText = 'Autosave ready';
+      if (this.lastSavedAt) {
+        const seconds = Math.max(0, Math.floor((Date.now() - this.lastSavedAt) / 1000));
+        saveText = seconds < 5 ? 'Saved just now'
+          : seconds < 60 ? `Saved ${seconds}s ago`
+          : `Saved ${Math.floor(seconds / 60)}m ago`;
+      }
+      r.drawText(saveText, 10, 88, '#7ee2a8', 10, 'left');
+
+      const method = this.input.getActiveMethod();
+      const methodLabel = method === 'gamepad' ? 'Controller' : 'Keyboard · F1 for guide';
+      r.drawText(methodLabel, 10, 104, '#636e72', 9, 'left');
     }
-    r.drawText(saveText, 10, 88, '#7ee2a8', 10, 'left');
-
-    const method = this.input.getActiveMethod();
-    const methodLabel = method === 'gamepad' ? 'Controller'
-      : method === 'touch' ? 'Touch controls'
-      : 'Keyboard · F1 for guide';
-    r.drawText(methodLabel, 10, 104, '#636e72', 9, 'left');
 
     // Health bar (bottom-center)
     if (this.localPlayer) {
-      const barWidth = 200;
-      const barHeight = 18;
+      const barWidth = touchMode ? Math.min(140, w - 24) : 200;
+      const barHeight = touchMode ? 12 : 18;
       const barX = (w - barWidth) / 2;
-      const barY = h - 40;
+      const barY = touchMode ? h - 28 : h - 40;
       this.healthBar.render(ctx, barX, barY, barWidth, barHeight);
 
       // XP bar below health bar
-      const xpBarY = barY + barHeight + 4;
-      this.xpBar.render(ctx, barX, xpBarY, barWidth, 12);
+      const xpBarY = barY + barHeight + (touchMode ? 2 : 4);
+      this.xpBar.render(ctx, barX, xpBarY, barWidth, touchMode ? 8 : 12);
     }
 
     // Buff indicators (above skill bar)
@@ -2731,14 +2732,14 @@ export default class Game {
     if (this.localPlayer) {
       const x = Math.round(this.localPlayer.x);
       const y = Math.round(this.localPlayer.y);
-      const locationY = this.input.isTouchDevice() ? 20 : 180;
-      r.drawText(`${x}, ${y}`, w - 10, locationY, '#636e72', 10, 'right');
+      const locationY = 180;
+      if (!touchMode) r.drawText(`${x}, ${y}`, w - 10, locationY, '#636e72', 10, 'right');
 
       // Current biome from loaded chunks
       const chunkX = Math.floor(this.localPlayer.x / CHUNK_PIXEL_SIZE);
       const chunkY = Math.floor(this.localPlayer.y / CHUNK_PIXEL_SIZE);
       const chunk = this.worldManager.getChunk(chunkX, chunkY);
-      if (chunk) {
+      if (chunk && !touchMode) {
         r.drawText(
           BIOME_NAMES[chunk.biomeId] || chunk.biomeId || '',
           w - 10,

@@ -12,6 +12,7 @@ export default class TouchInput {
     // Button states
     this.buttonStates = new Map(); // id -> {pressed, justPressed}
     this.buttonZones = []; // set by TouchControls
+    this.buttonZoneHandler = null;
 
     this.stickRadius = 60;
 
@@ -46,6 +47,10 @@ export default class TouchInput {
     this.buttonZones = zones;
   }
 
+  setButtonZoneHandler(handler) {
+    this.buttonZoneHandler = handler;
+  }
+
   onTouchStart(e) {
     e.preventDefault();
     this.active = true;
@@ -67,6 +72,7 @@ export default class TouchInput {
           const dy = ty - zone.y;
           if (dx * dx + dy * dy < zone.radius * zone.radius) {
             this.buttonStates.set(zone.id, { pressed: true, justPressed: true, touchId: touch.identifier });
+            if (this.buttonZoneHandler) this.buttonZoneHandler(zone.id);
             hitButton = true;
             break;
           }

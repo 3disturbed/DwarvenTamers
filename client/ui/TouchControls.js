@@ -6,17 +6,19 @@ export default class TouchControls {
     this.renderer = renderer;
     this.touchInput = touchInput;
     this.visible = false;
+    this.suppressed = false;
+    this.utilityOpen = false;
 
     this.buttons = [
       { id: 'action',    label: 'A', color: '#e74c3c' },
       { id: 'interact',  label: 'E', color: '#3498db' },
       { id: 'cancel',    label: 'B', color: '#95a5a6' },
-      { id: 'inventory', label: 'I', color: '#f39c12' },
       { id: 'dash',      label: 'D', color: '#3498db' },
     ];
 
-    // Top toolbar buttons for quick access (touch-only)
-    this.toolbarButtons = [
+    // Secondary screens live behind one thumb-friendly radial hub.
+    this.utilityButtons = [
+      { id: 'inventory', label: 'I', color: '#f39c12' },
       { id: 'questLog',  label: 'Q', color: '#2ecc71' },
       { id: 'skills',    label: 'K', color: '#9b59b6' },
       { id: 'map',        label: 'M', color: '#1abc9c' },
@@ -25,46 +27,84 @@ export default class TouchControls {
     ];
 
     this.radialCenter = { x: 0, y: 0, r: 0 };
+    this.utilityCenter = { x: 0, y: 0, r: 0 };
+    this.touchInput.setButtonZoneHandler((id) => this._handleZonePress(id));
   }
 
   show() { this.visible = true; this.updateButtonZones(); }
-  hide() { this.visible = false; }
+  hide() { this.visible = false; this.touchInput.setButtonZones([]); }
+
+  setSuppressed(suppressed) {
+    if (this.suppressed === suppressed) return;
+    this.suppressed = suppressed;
+    if (suppressed) this.utilityOpen = false;
+    this.updateButtonZones();
+  }
+
+  _handleZonePress(id) {
+    if (id === 'touchMenu') {
+      this.utilityOpen = !this.utilityOpen;
+      this.updateButtonZones();
+    } else if (this.utilityButtons.some(button => button.id === id)) {
+      this.utilityOpen = false;
+      this.updateButtonZones();
+    }
+  }
 
   updateButtonZones() {
+    if (!this.visible || this.suppressed) {
+      this.buttonZones = [];
+      this.touchInput.setButtonZones([]);
+      return;
+    }
+
     const w = this.renderer.width;
     const h = this.renderer.height;
-    const r = Math.max(TOUCH_MIN_TARGET / 2, 28);
-    const pad = 16;
+    const portrait = h > w;
+    const safeBottom = 18;
+    const actionRadius = Math.max(TOUCH_MIN_TARGET / 2, portrait ? 24 : 22);
+    const radialR = portrait ? 54 : 50;
+    const cx = w - (portrait ? 92 : 88);
+    const cy = h - safeBottom - (portrait ? 126 : 82);
+    const zones = [];
 
-    // Radial action menu - circular layout around a hub center
-    const cx = w - pad - 90;
-    const cy = h - pad - 130;
-    const radialR = 65;
-
-    // Angular positions: action center-right, interact top, cancel bottom,
-    // inventory left, dash bottom-right
-    const zones = [
-      { id: 'action',    x: cx + 20,                                    y: cy,                                     radius: r + 6 },
-      { id: 'interact',  x: cx + radialR * Math.cos(-Math.PI / 2),      y: cy + radialR * Math.sin(-Math.PI / 2),  radius: r },
-      { id: 'cancel',    x: cx + radialR * Math.cos(Math.PI / 2),       y: cy + radialR * Math.sin(Math.PI / 2),   radius: r },
-      { id: 'inventory', x: cx + radialR * Math.cos(Math.PI),           y: cy + radialR * Math.sin(Math.PI),        radius: r },
-      { id: 'dash',      x: cx + radialR * Math.cos(Math.PI / 5),       y: cy + radialR * Math.sin(Math.PI / 5),   radius: r },
+    // Three frequent actions orbit Cancel. Equal 120° spacing guarantees
+    // non-overlapping 48px targets even on a 320px portrait viewport.
+    const primaryLayout = [
+      { id: 'action', angle: 0 },
+      { id: 'interact', angle: -Math.PI * 2 / 3 },
+      { id: 'dash', angle: Math.PI * 2 / 3 },
     ];
+    for (const item of primaryLayout) {
+      zones.push({
+        id: item.id,
+        x: cx + radialR * Math.cos(item.angle),
+        y: cy + radialR * Math.sin(item.angle),
+        radius: actionRadius,
+      });
+    }
+    zones.push({ id: 'cancel', x: cx, y: cy, radius: actionRadius });
 
     this.radialCenter = { x: cx, y: cy, r: radialR };
 
-    // Toolbar buttons - top-left row, small circular buttons
-    const tbR = Math.max(TOUCH_MIN_TARGET / 2, 20);
-    const tbGap = tbR * 2 + 8;
-    const tbY = pad + tbR + 30;
-    for (let i = 0; i < this.toolbarButtons.length; i++) {
-      zones.push({
-        id: this.toolbarButtons[i].id,
-        x: pad + tbR + i * tbGap,
-        y: tbY,
-        radius: tbR,
-      });
+    // Collapsed utility radial replaces the five-button top toolbar.
+    const utilityRadius = Math.max(TOUCH_MIN_TARGET / 2, 22);
+    const utilityRing = 58;
+    const utilityCx = w - 86;
+    const utilityCy = portrait ? 152 : 76;
+    zones.push({ id: 'touchMenu', x: utilityCx, y: utilityCy, radius: utilityRadius });
+    if (this.utilityOpen) {
+      for (let i = 0; i < this.utilityButtons.length; i++) {
+        const angle = -Math.PI / 2 + i * (Math.PI * 2 / this.utilityButtons.length);
+        zones.push({
+          id: this.utilityButtons[i].id,
+          x: utilityCx + utilityRing * Math.cos(angle),
+          y: utilityCy + utilityRing * Math.sin(angle),
+          radius: TOUCH_MIN_TARGET / 2,
+        });
+      }
     }
+    this.utilityCenter = { x: utilityCx, y: utilityCy, r: utilityRing };
 
     this.buttonZones = zones;
     this.touchInput.setButtonZones(zones);
@@ -107,7 +147,7 @@ export default class TouchControls {
   }
 
   render(ctx) {
-    if (!this.visible) return;
+    if (!this.visible || this.suppressed) return;
 
     const s = this.renderer.uiScale;
 
@@ -153,17 +193,31 @@ export default class TouchControls {
     ctx.stroke();
 
     // Draw action buttons (radial layout)
-    for (let i = 0; i < this.buttons.length; i++) {
-      const zone = this.buttonZones[i];
-      const btn = this.buttons[i];
+    for (const btn of this.buttons) {
+      const zone = this.buttonZones.find(item => item.id === btn.id);
+      if (!zone) continue;
       const pressed = this.touchInput.isButtonDown(zone.id);
       this._drawButton(ctx, zone, btn, pressed, s);
     }
 
-    // Draw toolbar buttons (top-left row)
-    for (let i = 0; i < this.toolbarButtons.length; i++) {
-      const zone = this.buttonZones[this.buttons.length + i];
-      const btn = this.toolbarButtons[i];
+    // Utility hub and its expanded radial choices.
+    if (this.utilityOpen) {
+      const uc = this.utilityCenter;
+      ctx.globalAlpha = 0.12;
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2 / s;
+      ctx.beginPath();
+      ctx.arc(uc.x / s, uc.y / s, uc.r / s, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    const menuZone = this.buttonZones.find(item => item.id === 'touchMenu');
+    this._drawButton(ctx, menuZone, {
+      id: 'touchMenu', label: this.utilityOpen ? '×' : '☰', color: '#34495e',
+    }, this.touchInput.isButtonDown('touchMenu'), s);
+
+    for (const btn of this.utilityButtons) {
+      const zone = this.buttonZones.find(item => item.id === btn.id);
+      if (!zone) continue;
       const pressed = this.touchInput.isButtonDown(zone.id);
       this._drawButton(ctx, zone, btn, pressed, s);
     }

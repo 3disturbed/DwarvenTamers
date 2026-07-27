@@ -11,10 +11,13 @@ export default class SkillBar {
     this.flashTimers = {}; // skillId -> timer
   }
 
-  position(canvasWidth, canvasHeight) {
+  position(canvasWidth, canvasHeight, touchMode = false) {
+    this.slotSize = touchMode ? 30 : 40;
+    this.slotGap = touchMode ? 3 : 4;
+    this.dashSize = touchMode ? 22 : 28;
     const totalWidth = this.slotSize * 5 + this.slotGap * 4;
     this.x = Math.floor((canvasWidth - totalWidth) / 2);
-    this.y = canvasHeight - 90; // above health bar area
+    this.y = touchMode ? 42 : canvasHeight - 90;
   }
 
   update(dt) {
@@ -123,6 +126,7 @@ export default class SkillBar {
   }
 
   renderDashIndicator(ctx, skills, inputMethod) {
+    if (inputMethod === 'touch') return;
     const ds = this.dashSize;
     const dx = this.x - ds - 8; // to the left of skill bar
     const dy = this.y + (this.slotSize - ds) / 2; // vertically centered
