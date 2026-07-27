@@ -8,6 +8,7 @@ export const MSG = {
   INPUT_STATE:        'input:state',
   GAME_STATE:         'game:state',
   GAME_STATE_DELTA:   'game:state:delta',
+  SAVE_STATUS:        'game:save-status',
 
   // World
   CHUNK_REQUEST:      'chunk:request',

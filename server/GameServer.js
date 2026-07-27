@@ -902,6 +902,10 @@ export default class GameServer {
       petTeam: joinPc ? (joinPc.petTeam || [null, null, null]) : [null, null, null],
       petCodex: joinPc ? (joinPc.petCodex || []) : [],
     });
+    playerConn.emit(MSG.SAVE_STATUS, {
+      savedAt: saveData?.savedAt || null,
+      ready: true,
+    });
 
     // Send current land plot registry
     if (this.landPlotHandler) {
@@ -1018,7 +1022,7 @@ export default class GameServer {
 
   async savePlayer(playerConn) {
     const entity = this.entityManager.get(playerConn.id);
-    if (!entity) return;
+    if (!entity) return false;
 
     const pos = entity.getComponent(PositionComponent);
     const health = entity.getComponent(HealthComponent);
@@ -1058,7 +1062,11 @@ export default class GameServer {
       petCodex: pc ? (pc.petCodex || []) : [],
     };
 
-    await this.playerRepo.save(playerConn.id, data);
+    const saved = await this.playerRepo.save(playerConn.id, data);
+    if (saved) {
+      playerConn.emit(MSG.SAVE_STATUS, { savedAt: data.savedAt, ready: true });
+    }
+    return saved;
   }
 
   restorePlayerData(entity, saveData) {

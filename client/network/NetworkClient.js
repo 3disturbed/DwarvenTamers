@@ -16,6 +16,7 @@ export default class NetworkClient {
 
     // Callbacks
     this.onJoin = null;
+    this.onSaveStatus = null;
     this.onPlayerJoin = null;
     this.onPlayerLeave = null;
     this.onPlayerList = null;
@@ -141,6 +142,10 @@ export default class NetworkClient {
 
     this.socket.on(MSG.GAME_STATE_DELTA, (data) => {
       this.processServerState(data);
+    });
+
+    this.socket.on(MSG.SAVE_STATUS, (data) => {
+      if (this.onSaveStatus) this.onSaveStatus(data);
     });
 
     this.socket.on(MSG.DAMAGE, (data) => {

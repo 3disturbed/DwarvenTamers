@@ -46,6 +46,7 @@ import FishmongerPanel from './ui/FishmongerPanel.js';
 import FishingMinigame from './ui/FishingMinigame.js';
 import PvPBattlePanel from './ui/PvPBattlePanel.js';
 import { LAND_PLOTS } from '../shared/LandPlotTypes.js';
+import { BIOME_NAMES } from '../shared/BiomeTypes.js';
 
 export default class Game {
   constructor(canvas) {
@@ -63,6 +64,7 @@ export default class Game {
     // Local player state
     this.localPlayer = null;
     this.remotePlayers = new Map(); // id -> {name, color, x, y, hp, maxHp, facing}
+    this.lastSavedAt = null;
     this.enemies = new Map(); // id -> entity state from server
     this.resources = new Map(); // id -> resource entity state
     this.stations = new Map(); // id -> station entity state (AOI-local)
@@ -845,6 +847,9 @@ export default class Game {
         this.fishmongerPanel.close();
         this.inFishmonger = false;
       }
+    };
+    this.network.onSaveStatus = (data) => {
+      this.lastSavedAt = data?.savedAt || this.lastSavedAt;
     };
   }
 
@@ -2562,18 +2567,25 @@ export default class Game {
     const ctx = r.ctx;
     const w = r.logicalWidth;
     const h = r.logicalHeight;
-    // Connection status
-    const status = this.network.connected ? 'Connected' : 'Connecting...';
-    const statusColor = this.network.connected ? '#2ecc71' : '#e74c3c';
-    r.drawText(status, 10, 20, statusColor, 12, 'left');
+    // Solo status block sits beneath the persistent browser controls.
+    const status = this.localPlayer ? 'Adventure ready' : 'Preparing world…';
+    const statusColor = this.localPlayer ? '#e8d48b' : '#95a5a6';
+    r.drawText(status, 10, 72, statusColor, 11, 'left');
 
-    // Player count
-    const count = this.remotePlayers.size + (this.localPlayer ? 1 : 0);
-    r.drawText(`Players: ${count}`, 10, 36, '#95a5a6', 11, 'left');
+    let saveText = 'Autosave ready';
+    if (this.lastSavedAt) {
+      const seconds = Math.max(0, Math.floor((Date.now() - this.lastSavedAt) / 1000));
+      saveText = seconds < 5 ? 'Saved just now'
+        : seconds < 60 ? `Saved ${seconds}s ago`
+        : `Saved ${Math.floor(seconds / 60)}m ago`;
+    }
+    r.drawText(saveText, 10, 88, '#7ee2a8', 10, 'left');
 
-    // Input method indicator
     const method = this.input.getActiveMethod();
-    r.drawText(`Input: ${method}`, 10, 52, '#636e72', 10, 'left');
+    const methodLabel = method === 'gamepad' ? 'Controller'
+      : method === 'touch' ? 'Touch controls'
+      : 'Keyboard · F1 for guide';
+    r.drawText(methodLabel, 10, 104, '#636e72', 9, 'left');
 
     // Health bar (bottom-center)
     if (this.localPlayer) {
@@ -2633,12 +2645,22 @@ export default class Game {
     if (this.localPlayer) {
       const x = Math.round(this.localPlayer.x);
       const y = Math.round(this.localPlayer.y);
-      r.drawText(`${x}, ${y}`, w - 10, 20, '#636e72', 10, 'right');
+      const locationY = this.input.isTouchDevice() ? 20 : 180;
+      r.drawText(`${x}, ${y}`, w - 10, locationY, '#636e72', 10, 'right');
 
       // Current biome from loaded chunks
-      const chunk = this.worldManager.chunks.values().next().value;
+      const chunkX = Math.floor(this.localPlayer.x / CHUNK_PIXEL_SIZE);
+      const chunkY = Math.floor(this.localPlayer.y / CHUNK_PIXEL_SIZE);
+      const chunk = this.worldManager.getChunk(chunkX, chunkY);
       if (chunk) {
-        r.drawText(chunk.biomeId || '', w - 10, 36, '#95a5a6', 10, 'right');
+        r.drawText(
+          BIOME_NAMES[chunk.biomeId] || chunk.biomeId || '',
+          w - 10,
+          locationY + 16,
+          '#95a5a6',
+          10,
+          'right',
+        );
       }
     }
 
