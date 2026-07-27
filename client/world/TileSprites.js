@@ -33,6 +33,9 @@ export const TILE_SPRITE_NAMES = {
   [TILE.FLOOR_STONE]:  'floor_stone',
   [TILE.DOOR]:         'door',
   [TILE.MARKET_STALL]: 'market_stall',
+
+  // Caves
+  [TILE.CAVE_WALL]:    'cave_wall',
 };
 
 class TileSprites {
