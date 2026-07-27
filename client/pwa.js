@@ -1,6 +1,21 @@
 import { APP_NAME } from '../shared/AppConfig.js';
 
 let hideTimer = null;
+let deferredInstallPrompt = null;
+
+function isRunningStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function updateInstallOption() {
+  const installOption = document.getElementById('save-install-option');
+  const installButton = document.getElementById('save-install');
+  if (!installOption || !installButton) return;
+
+  const canInstall = !isRunningStandalone() && !!deferredInstallPrompt;
+  installOption.hidden = !canInstall;
+  installButton.disabled = !canInstall;
+}
 
 function showToast(message, actionLabel = null, action = null, persistent = false) {
   const toast = document.getElementById('system-toast');
@@ -21,6 +36,33 @@ function showToast(message, actionLabel = null, action = null, persistent = fals
 }
 
 export async function initializePwa() {
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    updateInstallOption();
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    updateInstallOption();
+    showToast(`${APP_NAME} installed.`);
+  });
+
+  const installButton = document.getElementById('save-install');
+  installButton?.addEventListener('click', async () => {
+    if (!deferredInstallPrompt || isRunningStandalone()) return;
+    deferredInstallPrompt.prompt();
+    const choice = await deferredInstallPrompt.userChoice;
+    if (choice.outcome !== 'accepted') {
+      updateInstallOption();
+      return;
+    }
+    deferredInstallPrompt = null;
+    updateInstallOption();
+  });
+
+  updateInstallOption();
+
   if (!('serviceWorker' in navigator)) return;
 
   window.addEventListener('offline', () => {

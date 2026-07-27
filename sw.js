@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dwarventamers-v16';
+const CACHE_NAME = 'dwarventamers-v17';
 const APP_SHELL = [
   './',
   './index.html',
