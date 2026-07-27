@@ -12,6 +12,7 @@ export default class PetCodexPanel {
     this.visible = false;
     this.x = 0;
     this.y = 0;
+    this.scale = 1;
     this.tab = TAB_COLLECTION;
 
     // Data from server
@@ -60,14 +61,15 @@ export default class PetCodexPanel {
   }
 
   position(screenW, screenH) {
-    const w = Math.min(PANEL_W, screenW - 16);
-    const h = Math.min(PANEL_H, screenH - 40);
-    this.x = Math.max(4, Math.floor((screenW - w) / 2));
-    this.y = Math.max(4, Math.floor((screenH - h) / 2));
+    this.scale = Math.min(1, (screenW - 8) / PANEL_W, (screenH - 8) / PANEL_H);
+    this.x = Math.max(4, Math.floor((screenW - PANEL_W * this.scale) / 2));
+    this.y = Math.max(4, Math.floor((screenH - PANEL_H * this.scale) / 2));
   }
 
   handleClick(mx, my, sendTeamSet, sendRename) {
     if (!this.visible) return false;
+    mx = this.x + (mx - this.x) / this.scale;
+    my = this.y + (my - this.y) / this.scale;
 
     // Close button (top-right)
     if (mx >= this.x + PANEL_W - 30 && mx <= this.x + PANEL_W - 4 &&
@@ -196,6 +198,8 @@ export default class PetCodexPanel {
 
   handleMouseMove(mx, my) {
     if (!this.visible) return;
+    mx = this.x + (mx - this.x) / this.scale;
+    my = this.y + (my - this.y) / this.scale;
     this.hoverIndex = -1;
     this.teamAssignHover = -1;
 
@@ -266,6 +270,10 @@ export default class PetCodexPanel {
 
   render(ctx) {
     if (!this.visible) return;
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.scale(this.scale, this.scale);
+    ctx.translate(-this.x, -this.y);
 
     // Background
     ctx.fillStyle = 'rgba(15, 12, 20, 0.95)';
@@ -302,6 +310,7 @@ export default class PetCodexPanel {
     } else {
       this._renderTeam(ctx);
     }
+    ctx.restore();
   }
 
   _renderCollection(ctx) {

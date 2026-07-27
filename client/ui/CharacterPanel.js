@@ -67,12 +67,12 @@ export default class CharacterPanel {
     this._canvasW = canvasWidth;
     this._canvasH = canvasHeight;
 
-    const isPhone = canvasWidth < 400;
+    const isPhone = canvasWidth < 400 || canvasHeight < 400;
     const isSmall = canvasWidth < BASE_W + 20;
 
     if (isPhone) {
       this.width = canvasWidth - 8;
-      this.height = Math.min(BASE_H, canvasHeight - 16);
+      this.height = canvasHeight - 8;
     } else if (isSmall) {
       this.width = canvasWidth - 16;
       this.height = Math.min(BASE_H, canvasHeight - 40);
@@ -82,7 +82,7 @@ export default class CharacterPanel {
     }
 
     this.x = Math.max(4, (canvasWidth - this.width) / 2);
-    this.y = Math.max(4, (canvasHeight - this.height) / 2 + 10);
+    this.y = isPhone ? 4 : Math.max(4, (canvasHeight - this.height) / 2 + 10);
 
     // Propagate content area to children
     this._updateContentAreas();

@@ -31,6 +31,10 @@ export default class ChestPanel {
 
     // Button rects for hit testing (populated during render)
     this.btnRects = [];
+    this.mobile = false;
+    this.mobileSide = 'chest';
+    this._desktopWidth = 0;
+    this._desktopHeight = 0;
   }
 
   open(data) {
@@ -57,6 +61,8 @@ export default class ChestPanel {
     const gridH = maxRows * (SLOT_SIZE + SLOT_GAP);
     // title(28) + labels(16) + grid + buttons area(36) + padding
     this.height = Math.min(28 + 16 + gridH + 36 + PADDING * 2, 480);
+    this._desktopWidth = this.width;
+    this._desktopHeight = this.height;
   }
 
   updateSlots(data) {
@@ -73,6 +79,16 @@ export default class ChestPanel {
   }
 
   position(screenWidth, screenHeight) {
+    this.mobile = screenWidth < this._desktopWidth + 16 || screenHeight < this._desktopHeight + 16;
+    if (this.mobile) {
+      this.width = screenWidth - 8;
+      this.height = screenHeight - 8;
+      this.x = 4;
+      this.y = 4;
+      return;
+    }
+    this.width = this._desktopWidth;
+    this.height = this._desktopHeight;
     this.x = Math.max(4, Math.floor((screenWidth - this.width) / 2));
     this.y = Math.max(4, Math.floor((screenHeight - this.height) / 2));
   }
@@ -146,6 +162,16 @@ export default class ChestPanel {
       return { action: 'close' };
     }
 
+    if (this.mobile) {
+      const tabY = this.y + 26;
+      const tabW = (this.width - PADDING * 2) / 2;
+      if (my >= tabY && my <= tabY + 32) {
+        this.mobileSide = mx < this.x + this.width / 2 ? 'chest' : 'player';
+        this.scrollOffset = 0;
+        return null;
+      }
+    }
+
     // Check quick-action buttons
     const buttons = this._getButtons();
     for (let i = 0; i < this.btnRects.length; i++) {
@@ -156,12 +182,13 @@ export default class ChestPanel {
     }
 
     const gridW = COLS * (SLOT_SIZE + SLOT_GAP) - SLOT_GAP;
-    const chestGridX = this.x + PADDING;
-    const playerGridX = this.x + PADDING + gridW + 30;
-    const gridY = this.y + 44;
+    const chestGridX = this.mobile ? this.x + (this.width - gridW) / 2 : this.x + PADDING;
+    const playerGridX = this.mobile ? chestGridX : this.x + PADDING + gridW + 30;
+    const gridY = this.y + (this.mobile ? 64 : 44);
 
     // Check chest grid click (withdraw)
-    const chestSlot = this._getClickedSlot(mx, my, chestGridX, gridY, this.maxSlots);
+    const chestSlot = this.mobile && this.mobileSide !== 'chest'
+      ? -1 : this._getClickedSlot(mx, my, chestGridX, gridY, this.maxSlots);
     if (chestSlot >= 0 && this.chestSlots[chestSlot]) {
       return {
         action: 'withdraw',
@@ -173,7 +200,8 @@ export default class ChestPanel {
 
     // Check player grid click (deposit)
     const invSlots = inventory ? (inventory.slots || []) : [];
-    const playerSlot = this._getClickedSlot(mx, my, playerGridX, gridY, invSlots.length);
+    const playerSlot = this.mobile && this.mobileSide !== 'player'
+      ? -1 : this._getClickedSlot(mx, my, playerGridX, gridY, invSlots.length);
     if (playerSlot >= 0 && invSlots[playerSlot]) {
       return {
         action: 'deposit',
@@ -204,11 +232,12 @@ export default class ChestPanel {
     }
 
     const gridW = COLS * (SLOT_SIZE + SLOT_GAP) - SLOT_GAP;
-    const chestGridX = this.x + PADDING;
-    const playerGridX = this.x + PADDING + gridW + 30;
-    const gridY = this.y + 44;
+    const chestGridX = this.mobile ? this.x + (this.width - gridW) / 2 : this.x + PADDING;
+    const playerGridX = this.mobile ? chestGridX : this.x + PADDING + gridW + 30;
+    const gridY = this.y + (this.mobile ? 64 : 44);
 
-    const chestSlot = this._getClickedSlot(mx, my, chestGridX, gridY, this.maxSlots);
+    const chestSlot = this.mobile && this.mobileSide !== 'chest'
+      ? -1 : this._getClickedSlot(mx, my, chestGridX, gridY, this.maxSlots);
     if (chestSlot >= 0) {
       this.hoveredSide = 'chest';
       this.hoveredIndex = chestSlot;
@@ -216,7 +245,8 @@ export default class ChestPanel {
     }
 
     const invSlots = inventory ? (inventory.slots || []).length : 100;
-    const playerSlot = this._getClickedSlot(mx, my, playerGridX, gridY, invSlots);
+    const playerSlot = this.mobile && this.mobileSide !== 'player'
+      ? -1 : this._getClickedSlot(mx, my, playerGridX, gridY, invSlots);
     if (playerSlot >= 0) {
       this.hoveredSide = 'player';
       this.hoveredIndex = playerSlot;
@@ -342,7 +372,7 @@ export default class ChestPanel {
     if (my < gridY) return -1;
 
     const col = Math.floor((mx - gridX) / (SLOT_SIZE + SLOT_GAP));
-    const row = Math.floor((my - gridY) / (SLOT_SIZE + SLOT_GAP));
+    const row = Math.floor((my - gridY) / (SLOT_SIZE + SLOT_GAP)) + this.scrollOffset;
     if (col < 0 || col >= COLS) return -1;
 
     const idx = row * COLS + col;
@@ -365,9 +395,9 @@ export default class ChestPanel {
     ctx.strokeRect(this.x, this.y, this.width, this.height);
 
     const gridW = COLS * (SLOT_SIZE + SLOT_GAP) - SLOT_GAP;
-    const chestGridX = this.x + PADDING;
-    const playerGridX = this.x + PADDING + gridW + 30;
-    const gridY = this.y + 44;
+    const chestGridX = this.mobile ? this.x + (this.width - gridW) / 2 : this.x + PADDING;
+    const playerGridX = this.mobile ? chestGridX : this.x + PADDING + gridW + 30;
+    const gridY = this.y + (this.mobile ? 64 : 44);
 
     // Title
     const tierNames = {
@@ -389,24 +419,38 @@ export default class ChestPanel {
     ctx.textAlign = 'right';
     ctx.fillText('[X]', this.x + this.width - 8, this.y + 18);
 
-    // Column labels
-    ctx.fillStyle = '#aaa';
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('Chest', chestGridX + gridW / 2, this.y + 36);
-    ctx.fillText('Inventory', playerGridX + gridW / 2, this.y + 36);
-
-    // Divider line
-    const divX = this.x + PADDING + gridW + 15;
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(divX, gridY);
-    ctx.lineTo(divX, this.y + this.height - 40);
-    ctx.stroke();
+    if (this.mobile) {
+      const tabY = this.y + 26;
+      const tabW = (this.width - PADDING * 2) / 2;
+      for (const [side, tx, label] of [
+        ['chest', this.x + PADDING, 'Chest'],
+        ['player', this.x + PADDING + tabW, 'Inventory'],
+      ]) {
+        ctx.fillStyle = this.mobileSide === side ? '#4a3d12' : '#20202c';
+        ctx.fillRect(tx, tabY, tabW, 32);
+        ctx.strokeStyle = this.mobileSide === side ? '#f1c40f' : '#444';
+        ctx.strokeRect(tx, tabY, tabW, 32);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 11px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, tx + tabW / 2, tabY + 21);
+      }
+    } else {
+      ctx.fillStyle = '#aaa';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Chest', chestGridX + gridW / 2, this.y + 36);
+      ctx.fillText('Inventory', playerGridX + gridW / 2, this.y + 36);
+      const divX = this.x + PADDING + gridW + 15;
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+      ctx.beginPath();
+      ctx.moveTo(divX, gridY);
+      ctx.lineTo(divX, this.y + this.height - 40);
+      ctx.stroke();
+    }
 
     // Clip for slot rendering
-    const gridAreaH = this.height - 44 - 40; // leave room for title + buttons
+    const gridAreaH = this.height - (this.mobile ? 64 : 44) - (this.mobile ? 66 : 40);
     ctx.save();
     ctx.beginPath();
     ctx.rect(this.x, gridY, this.width, gridAreaH);
@@ -414,14 +458,18 @@ export default class ChestPanel {
 
     // Draw chest slots
     const chestFocusIdx = (this.hasFocus && this.focusSide === 'chest') ? this.focusIndex : -1;
-    this._renderGrid(ctx, chestGridX, gridY, this.chestSlots, this.maxSlots,
-      this.hoveredSide === 'chest' ? this.hoveredIndex : -1, chestFocusIdx);
+    if (!this.mobile || this.mobileSide === 'chest') {
+      this._renderGrid(ctx, chestGridX, gridY, this.chestSlots, this.maxSlots,
+        this.hoveredSide === 'chest' ? this.hoveredIndex : -1, chestFocusIdx);
+    }
 
     // Draw player inventory slots
     const invSlots = inventory ? (inventory.slots || []) : [];
     const playerFocusIdx = (this.hasFocus && this.focusSide === 'player') ? this.focusIndex : -1;
-    this._renderGrid(ctx, playerGridX, gridY, invSlots, invSlots.length,
-      this.hoveredSide === 'player' ? this.hoveredIndex : -1, playerFocusIdx);
+    if (!this.mobile || this.mobileSide === 'player') {
+      this._renderGrid(ctx, playerGridX, gridY, invSlots, invSlots.length,
+        this.hoveredSide === 'player' ? this.hoveredIndex : -1, playerFocusIdx);
+    }
 
     ctx.restore();
 
@@ -437,7 +485,7 @@ export default class ChestPanel {
       const col = i % COLS;
       const row = Math.floor(i / COLS);
       const sx = gridX + col * (SLOT_SIZE + SLOT_GAP);
-      const sy = gridY + row * (SLOT_SIZE + SLOT_GAP);
+      const sy = gridY + (row - this.scrollOffset) * (SLOT_SIZE + SLOT_GAP);
 
       // Slot background
       const isHovered = i === hoveredIdx;
@@ -491,8 +539,10 @@ export default class ChestPanel {
   _renderButtons(ctx) {
     const buttons = this._getButtons();
     const totalBtnW = this.width - PADDING * 2;
-    const btnW = Math.floor((totalBtnW - BTN_GAP * (buttons.length - 1)) / buttons.length);
-    const btnY = this.y + this.height - BTN_H - 8;
+    const columns = this.mobile ? 2 : buttons.length;
+    const rows = this.mobile ? 2 : 1;
+    const btnW = Math.floor((totalBtnW - BTN_GAP * (columns - 1)) / columns);
+    const btnY = this.y + this.height - rows * (BTN_H + BTN_GAP) - 4;
 
     this.btnRects = [];
 
@@ -500,8 +550,8 @@ export default class ChestPanel {
 
     for (let i = 0; i < buttons.length; i++) {
       const btn = buttons[i];
-      const bx = this.x + PADDING + i * (btnW + BTN_GAP);
-      const by = btnY;
+      const bx = this.x + PADDING + (i % columns) * (btnW + BTN_GAP);
+      const by = btnY + Math.floor(i / columns) * (BTN_H + BTN_GAP);
 
       this.btnRects.push({ x: bx, y: by, w: btnW, h: BTN_H });
 

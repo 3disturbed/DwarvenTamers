@@ -10,6 +10,19 @@ const { default: FishmongerPanel } = await import('../client/ui/FishmongerPanel.
 const { default: AlchemyPanel } = await import('../client/ui/AlchemyPanel.js');
 const { default: PetBattlePanel } = await import('../client/ui/PetBattlePanel.js');
 const { default: PvPBattlePanel } = await import('../client/ui/PvPBattlePanel.js');
+const { default: CharacterPanel } = await import('../client/ui/CharacterPanel.js');
+const { default: InventoryPanel } = await import('../client/ui/InventoryPanel.js');
+const { default: CharacterTabContent } = await import('../client/ui/CharacterTabContent.js');
+const { default: ChestPanel } = await import('../client/ui/ChestPanel.js');
+const { default: PetCodexPanel } = await import('../client/ui/PetCodexPanel.js');
+const { default: FishingRodPanel } = await import('../client/ui/FishingRodPanel.js');
+const { default: CraftingPanel } = await import('../client/ui/CraftingPanel.js');
+const { default: UpgradePanel } = await import('../client/ui/UpgradePanel.js');
+const { default: SkillsPanel } = await import('../client/ui/SkillsPanel.js');
+const { default: ShopPanel } = await import('../client/ui/ShopPanel.js');
+const { default: QuestPanel } = await import('../client/ui/QuestPanel.js');
+const { default: MailJobPanel } = await import('../client/ui/MailJobPanel.js');
+const { default: AnimalPenPanel } = await import('../client/ui/AnimalPenPanel.js');
 
 let passed = 0;
 
@@ -145,6 +158,62 @@ for (const BattlePanel of [PetBattlePanel, PvPBattlePanel]) {
     () => {},
   );
   assert(selected === 4, `${BattlePanel.name} uses a tappable two-row phone action grid`);
+}
+
+const inventoryContent = new InventoryPanel();
+const characterContent = new CharacterTabContent();
+const characterPanel = new CharacterPanel(inventoryContent, characterContent);
+characterPanel.position(257, 343);
+assert(
+  characterPanel.x >= 0 && characterPanel.y >= 0 &&
+  characterPanel.x + characterPanel.width <= 257 &&
+  characterPanel.y + characterPanel.height <= 343,
+  'character menu fills a phone without overflowing',
+);
+assert(inventoryContent._detailMode === 'drilldown', 'phone inventory uses a dedicated item detail screen');
+assert(inventoryContent._visibleRows >= 8, 'phone inventory keeps a useful full-height item list');
+characterPanel.position(666, 307);
+assert(
+  characterPanel.x === 4 && characterPanel.y === 4 &&
+  characterPanel.width === 658 && characterPanel.height === 299,
+  'character menu uses the full landscape phone viewport',
+);
+
+const chest = new ChestPanel();
+chest.open({ entityId: 'test', chestTier: 'wooden_chest', maxSlots: 25, slots: [] });
+chest.position(257, 343);
+assert(chest.mobile && chest.width === 249 && chest.height === 335, 'chest uses a full-screen phone layout');
+chest.visible = true;
+chest.handleClick(chest.x + chest.width * 0.75, chest.y + 42, { slots: [] });
+assert(chest.mobileSide === 'player', 'phone chest switches between storage and inventory tabs');
+chest.open({ entityId: 'test', chestTier: 'wooden_chest', maxSlots: 25, slots: [] });
+chest.position(666, 307);
+assert(chest.mobile && chest.height === 299, 'chest also reflows on short landscape phones');
+
+const codex = new PetCodexPanel();
+codex.position(257, 343);
+assert(codex.scale < 1 && codex.x >= 0 && codex.y >= 0, 'pet codex remains fully visible on phones');
+
+const rodPanel = new FishingRodPanel();
+rodPanel.position(257, 343);
+assert(rodPanel.scale <= 1 && rodPanel.x >= 0 && rodPanel.y >= 0, 'fishing rod menu remains fully visible on phones');
+
+for (const MenuPanel of [
+  CraftingPanel,
+  UpgradePanel,
+  SkillsPanel,
+  ShopPanel,
+  QuestPanel,
+  MailJobPanel,
+  AnimalPenPanel,
+]) {
+  const menu = new MenuPanel();
+  menu.position(257, 343);
+  const menuWidth = menu.width ?? 257;
+  assert(
+    menu.x >= 0 && menu.x + menuWidth <= 257,
+    `${MenuPanel.name} remains within the phone width`,
+  );
 }
 
 console.log(`\n  Results: ${passed} passed, 0 failed`);

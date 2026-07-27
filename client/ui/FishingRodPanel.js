@@ -18,6 +18,7 @@ export default class FishingRodPanel {
     this.visible = false;
     this.x = 0;
     this.y = 0;
+    this.scale = 1;
     this.rodItem = null;     // the equipped rod item data
     this.rodParts = {};      // { reel, line, hook, bait } -> item ID strings or null
     this.hoveredSlot = -1;
@@ -45,10 +46,9 @@ export default class FishingRodPanel {
   }
 
   position(canvasWidth, canvasHeight) {
-    const w = Math.min(PANEL_W, canvasWidth - 16);
-    const h = Math.min(PANEL_H, canvasHeight - 40);
-    this.x = Math.max(4, Math.floor(canvasWidth / 2 - w / 2));
-    this.y = Math.max(4, Math.floor(canvasHeight / 2 - h / 2));
+    this.scale = Math.min(1, (canvasWidth - 8) / PANEL_W, (canvasHeight - 8) / PANEL_H);
+    this.x = Math.max(4, Math.floor((canvasWidth - PANEL_W * this.scale) / 2));
+    this.y = Math.max(4, Math.floor((canvasHeight - PANEL_H * this.scale) / 2));
   }
 
   handleMouseMove(mx, my) {
@@ -56,6 +56,8 @@ export default class FishingRodPanel {
     this.mouseY = my;
     this.hoveredSlot = -1;
     if (!this.visible) return;
+    mx = this.x + (mx - this.x) / this.scale;
+    my = this.y + (my - this.y) / this.scale;
 
     const slotStartY = this.y + PAD + 30;
     for (let i = 0; i < PART_SLOTS.length; i++) {
@@ -77,6 +79,8 @@ export default class FishingRodPanel {
    */
   handleClick(mx, my, inventory) {
     if (!this.visible) return null;
+    mx = this.x + (mx - this.x) / this.scale;
+    my = this.y + (my - this.y) / this.scale;
 
     // Close button (top-right corner)
     if (mx >= this.x + PANEL_W - 30 && mx < this.x + PANEL_W - PAD &&
@@ -106,6 +110,10 @@ export default class FishingRodPanel {
 
   render(ctx) {
     if (!this.visible || !this.rodItem) return;
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.scale(this.scale, this.scale);
+    ctx.translate(-this.x, -this.y);
 
     const x = this.x;
     const y = this.y;
@@ -206,5 +214,6 @@ export default class FishingRodPanel {
       ctx.fillStyle = '#666';
       ctx.fillText('No bait equipped', x + PAD + 6, lineY);
     }
+    ctx.restore();
   }
 }

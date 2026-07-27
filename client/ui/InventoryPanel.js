@@ -45,7 +45,7 @@ export default class InventoryPanel {
     // Derived layout values
     this._listW = 210;
     this._detailW = 280;
-    this._detailMode = 'side'; // 'side' or 'bottom'
+    this._detailMode = 'side'; // 'side' or phone 'drilldown'
     this._visibleRows = 13;
   }
 
@@ -61,11 +61,11 @@ export default class InventoryPanel {
   _recalcLayout() {
     const isNarrow = this.contentW < 360;
     if (isNarrow) {
-      // Single-column: list full width, detail below
+      // Phone master/detail: full-height list, then a dedicated item screen.
       this._listW = this.contentW - PANEL_PAD * 2;
       this._detailW = this.contentW - PANEL_PAD * 2;
-      this._detailMode = 'bottom';
-      this._visibleRows = Math.max(4, Math.floor((this.contentH * 0.45 - TAB_H - 10) / ROW_H));
+      this._detailMode = 'drilldown';
+      this._visibleRows = Math.max(4, Math.floor((this.contentH - TAB_H - 16) / ROW_H));
     } else {
       // Side-by-side
       this._listW = Math.min(210, Math.floor(this.contentW * 0.42));
@@ -161,6 +161,14 @@ export default class InventoryPanel {
       this.scrollOffset = 0;
       this._updateCache(inventory);
       return true;
+    }
+
+    if (this._detailMode === 'drilldown' && this.selectedItemIndex >= 0) {
+      const back = this._getMobileBackRect();
+      if (mx >= back.x && mx <= back.x + back.w && my >= back.y && my <= back.y + back.h) {
+        this.selectedItemIndex = -1;
+        return true;
+      }
     }
 
     // Check action button clicks
@@ -346,10 +354,14 @@ export default class InventoryPanel {
       : this.contentX + PANEL_PAD;
     const detailY = this._detailMode === 'side'
       ? this.contentY + 4 + TAB_H + TAB_PAD + 4
-      : this.contentY + 4 + TAB_H + TAB_PAD + 4 + this._visibleRows * ROW_H + 6;
+      : this._detailMode === 'drilldown'
+        ? this.contentY + 4 + TAB_H + TAB_PAD + 4
+        : this.contentY + 4 + TAB_H + TAB_PAD + 4 + this._visibleRows * ROW_H + 6;
     const detailH = this._detailMode === 'side'
       ? this._visibleRows * ROW_H
-      : this.contentH - (TAB_H + TAB_PAD + 4 + this._visibleRows * ROW_H + 10);
+      : this._detailMode === 'drilldown'
+        ? this.contentH - (TAB_H + TAB_PAD + 12)
+        : this.contentH - (TAB_H + TAB_PAD + 4 + this._visibleRows * ROW_H + 10);
 
     const btnY = detailY + detailH - PANEL_PAD - BTN_H * 2 - BTN_GAP;
     for (let row = 0; row < 2; row++) {
@@ -381,6 +393,15 @@ export default class InventoryPanel {
     return btns;
   }
 
+  _getMobileBackRect() {
+    return {
+      x: this.contentX + PANEL_PAD + 6,
+      y: this.contentY + 4 + TAB_H + TAB_PAD + 10,
+      w: 72,
+      h: 32,
+    };
+  }
+
   // ---- Rendering ----
 
   render(ctx, inventory) {
@@ -395,11 +416,12 @@ export default class InventoryPanel {
     // Category tabs
     this._renderTabs(ctx);
 
-    // Item list
-    this._renderItemList(ctx);
-
-    // Detail panel
-    this._renderDetailPanel(ctx, inventory);
+    if (this._detailMode === 'drilldown' && this.selectedItemIndex >= 0) {
+      this._renderDetailPanel(ctx, inventory);
+    } else {
+      this._renderItemList(ctx);
+      if (this._detailMode !== 'drilldown') this._renderDetailPanel(ctx, inventory);
+    }
 
     // Swap mode indicator
     if (this.swapSource >= 0) {
@@ -540,8 +562,12 @@ export default class InventoryPanel {
       detailY = this.contentY + 4 + TAB_H + TAB_PAD + 4;
       detailW = this._detailW;
       detailH = this._visibleRows * ROW_H;
+    } else if (this._detailMode === 'drilldown') {
+      detailX = this.contentX + PANEL_PAD;
+      detailY = this.contentY + 4 + TAB_H + TAB_PAD + 4;
+      detailW = this._detailW;
+      detailH = this.contentH - (TAB_H + TAB_PAD + 12);
     } else {
-      // Bottom mode
       detailX = this.contentX + PANEL_PAD;
       detailY = this.contentY + 4 + TAB_H + TAB_PAD + 4 + this._visibleRows * ROW_H + 6;
       detailW = this._detailW;
@@ -554,6 +580,18 @@ export default class InventoryPanel {
     ctx.strokeStyle = '#222';
     ctx.lineWidth = 1;
     ctx.strokeRect(detailX, detailY, detailW, detailH);
+
+    if (this._detailMode === 'drilldown') {
+      const back = this._getMobileBackRect();
+      ctx.fillStyle = '#222238';
+      ctx.fillRect(back.x, back.y, back.w, back.h);
+      ctx.strokeStyle = '#c9a84c';
+      ctx.strokeRect(back.x, back.y, back.w, back.h);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 11px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('\u2039 Items', back.x + back.w / 2, back.y + 21);
+    }
 
     if (this.selectedItemIndex < 0 || this.selectedItemIndex >= this._cachedItems.length) {
       ctx.fillStyle = '#444';
@@ -568,7 +606,7 @@ export default class InventoryPanel {
     const slot = inventory.getSlot(item.slotIndex);
     if (!slot) return;
 
-    let lineY = detailY + 16;
+    let lineY = detailY + (this._detailMode === 'drilldown' ? 54 : 16);
     const lx = detailX + 8;
     const lineH = 14;
 
