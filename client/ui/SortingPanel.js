@@ -257,11 +257,13 @@ export default class SortingPanel {
     this.scorePopups = [];
   }
 
-  position(screenWidth, screenHeight) {
+  position(screenWidth, screenHeight, touchDevice = false) {
     this.screenW = screenWidth;
     this.screenH = screenHeight;
 
-    const compact = screenWidth < 600;
+    // Large iPhones can exceed 600 logical pixels in landscape. Touch
+    // capability is the reliable signal that the on-screen gate UI is needed.
+    const compact = touchDevice || screenWidth < 600;
     const compactLandscape = compact && screenHeight < 400;
     const headerH = compact ? (compactLandscape ? 54 : 64) : 55;
     const footerH = compact ? (compactLandscape ? 70 : 126) : 35;

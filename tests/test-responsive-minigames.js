@@ -56,6 +56,19 @@ assert(
   'landscape sorting controls remain inside the viewport',
 );
 
+sorting.position(666, 307, true);
+assert(
+  sorting._layout.compact && sorting._layout.compactLandscape,
+  'large landscape iPhones use touch controls instead of the desktop layout',
+);
+assert(
+  sorting._layout.gateButtons.every(button =>
+    button.x >= 0 && button.x + button.width <= 666 &&
+    button.y >= 0 && button.y + button.height <= 307
+  ),
+  'large-iPhone sorting controls remain visible',
+);
+
 const fishing = new FishingMinigame();
 const portraitFishing = fishing.getLayout(257, 343);
 assert(portraitFishing.compact, 'fishing uses phone-friendly controls');
@@ -63,6 +76,10 @@ assert(
   portraitFishing.x >= 0 && portraitFishing.x + portraitFishing.width <= 257 &&
   portraitFishing.y >= 0 && portraitFishing.y + portraitFishing.height <= 343,
   'fishing controls remain inside a short phone viewport',
+);
+assert(
+  fishing.getLayout(666, 307, true).compact,
+  'large landscape iPhones retain touch fishing instructions',
 );
 
 console.log(`\n  Results: ${passed} passed, 0 failed`);

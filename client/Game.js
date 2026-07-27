@@ -804,7 +804,11 @@ export default class Game {
     // Sorting minigame callbacks
     this.network.onSortStart = (data) => {
       this.inSorting = true;
-      this.sortingPanel.position(this.renderer.logicalWidth, this.renderer.logicalHeight);
+      this.sortingPanel.position(
+        this.renderer.logicalWidth,
+        this.renderer.logicalHeight,
+        this.input.isTouchDevice(),
+      );
       this.sortingPanel.start(data);
     };
     this.network.onSortEnd = (data) => {
@@ -1036,8 +1040,8 @@ export default class Game {
         }
       }
 
-      // Click to close results
-      if (actions.action && this.sortingPanel.results) {
+      // Click/tap to close results
+      if ((actions.action || actions.screenTap) && this.sortingPanel.results) {
         const result = this.sortingPanel.handleClick(uiMX, uiMY);
         if (result && result.action === 'close') {
           this.sortingPanel.close();
@@ -2192,7 +2196,7 @@ export default class Game {
 
     // Sorting minigame panel
     if (this.sortingPanel.visible) {
-      this.sortingPanel.position(r.logicalWidth, r.logicalHeight);
+      this.sortingPanel.position(r.logicalWidth, r.logicalHeight, this.input.isTouchDevice());
       this.sortingPanel.render(ctx);
     }
 
@@ -2795,7 +2799,12 @@ export default class Game {
 
     // Stardew-style minigame
     if (this.fishingMinigame.active) {
-      this.fishingMinigame.render(ctx, r.logicalWidth, r.logicalHeight);
+      this.fishingMinigame.render(
+        ctx,
+        r.logicalWidth,
+        r.logicalHeight,
+        this.input.isTouchDevice(),
+      );
     }
 
     // Fishing message (catch result / error)

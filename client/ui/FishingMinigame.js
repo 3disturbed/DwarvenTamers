@@ -141,8 +141,8 @@ export default class FishingMinigame {
     }
   }
 
-  getLayout(screenW, screenH) {
-    const compact = screenW < 600;
+  getLayout(screenW, screenH, touchDevice = false) {
+    const compact = touchDevice || screenW < 600;
     const width = compact ? 44 : this.barWidth;
     const height = Math.min(this.barHeight, Math.max(150, screenH - (compact ? 150 : 80)));
     return {
@@ -154,10 +154,10 @@ export default class FishingMinigame {
     };
   }
 
-  render(ctx, screenW, screenH) {
+  render(ctx, screenW, screenH, touchDevice = false) {
     if (!this.active) return;
 
-    const layout = this.getLayout(screenW, screenH);
+    const layout = this.getLayout(screenW, screenH, touchDevice);
     const { compact } = layout;
     const bw = layout.width;
     const bh = layout.height;
