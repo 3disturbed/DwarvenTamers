@@ -875,6 +875,12 @@ export default class Game {
     const uiMX = actions.mouseScreenX / s;
     const uiMY = actions.mouseScreenY / s;
 
+    // Native help dialog owns all input while open. The simulation continues,
+    // but the character cannot move, attack, or trigger hidden panels.
+    if (document.getElementById('help-dialog')?.open) {
+      actions.reset();
+    }
+
     // Suppress game actions while pet codex rename is active (keys go to text input)
     if (this.petCodexOpen && this.petCodexPanel.renaming) {
       actions.moveX = 0;

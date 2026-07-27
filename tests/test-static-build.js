@@ -23,6 +23,8 @@ assert(manifest.start_url === './' && manifest.scope === './', 'manifest stays i
 assert(manifest.display === 'fullscreen', 'installed game launches fullscreen');
 assert(worker.includes("'./index.html'"), 'service worker precaches the offline entry point');
 assert(worker.includes("url.hostname === 'cdn.jsdelivr.net'"), 'service worker caches the noise module dependency');
+assert(html.includes('id="help-dialog"'), 'first-run guide is present');
+assert(worker.includes("'./client/onboarding.js'"), 'first-run guide works offline');
 
 for (const path of [
   '../index.html',
@@ -31,6 +33,7 @@ for (const path of [
   '../sw.js',
   '../client/main.js',
   '../client/pwa.js',
+  '../client/onboarding.js',
 ]) {
   await access(new URL(path, import.meta.url));
 }

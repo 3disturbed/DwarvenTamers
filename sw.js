@@ -1,4 +1,4 @@
-const CACHE_NAME = 'soloheim-v1';
+const CACHE_NAME = 'soloheim-v2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const APP_SHELL = [
   './icon.svg',
   './client/main.js',
   './client/pwa.js',
+  './client/onboarding.js',
   './client/NordFolkLogo.png',
 ];
 

@@ -9,9 +9,11 @@ import itemSprites from './entities/ItemSprites.js';
 import uiSprites from './ui/UISprites.js';
 import resourceSprites from './entities/ResourceSprites.js';
 import { initializePwa } from './pwa.js';
+import { initializeOnboarding } from './onboarding.js';
 
 // SoloHiem has one local character and loads directly without an account screen.
 initializePwa();
+initializeOnboarding();
 startGame();
 
 function startGame() {
