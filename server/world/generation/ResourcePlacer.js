@@ -2,9 +2,10 @@ import { CHUNK_SIZE, TILE_SIZE } from '../../../shared/Constants.js';
 import { TILE, WATER_TILE_IDS } from '../../../shared/TileTypes.js';
 
 export default class ResourcePlacer {
-  constructor(noiseGen, gradientResolver) {
+  constructor(noiseGen, gradientResolver, options = {}) {
     this.noise = noiseGen;
     this.gradient = gradientResolver;
+    this.densityMultiplier = options.densityMultiplier ?? 1.0;
   }
 
   // Place resources in a chunk based on biome gradient
@@ -41,7 +42,9 @@ export default class ResourcePlacer {
             worldY + entry.id.charCodeAt(1) * 100
           );
 
-          if (this.gradient.shouldSpawn(gradient, entry, noiseVal)) {
+          const baseDensity = this.gradient.getDensity(gradient, entry);
+          const scaledDensity = Math.min(1, baseDensity * this.densityMultiplier);
+          if (noiseVal < scaledDensity) {
             resources.push({
               id: entry.id,
               x: worldX,

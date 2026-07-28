@@ -43,6 +43,8 @@ import SkillSystem from './ecs/systems/SkillSystem.js';
 import QuestTrackingSystem from './ecs/systems/QuestTrackingSystem.js';
 import ProjectileSystem from './ecs/systems/ProjectileSystem.js';
 import DamageZoneSystem from './ecs/systems/DamageZoneSystem.js';
+import HungerSystem from './ecs/systems/HungerSystem.js';
+import SleepSystem from './ecs/systems/SleepSystem.js';
 import CombatResolver from './combat/CombatResolver.js';
 import TileCollisionMap from './collision/TileCollisionMap.js';
 import WorldManager from './world/WorldManager.js';
@@ -80,7 +82,19 @@ export default class GameServer {
       seed: options.seed ?? 42,
       horseSpawnChance: options.horseSpawnChance ?? 1,
       chestSpawnChance: options.chestSpawnChance ?? 1,
+      mobDensityMultiplier: options.mobDensityMultiplier ?? 1.0,
+      resourceDensityMultiplier: options.resourceDensityMultiplier ?? 1.0,
+      caveDensityMultiplier: options.caveDensityMultiplier ?? 1.0,
+      waterAmountMultiplier: options.waterAmountMultiplier ?? 1.0,
     };
+    
+    // Survival mode settings
+    this.hungerEnabled = this.mode === 'survival' && (options.hungerEnabled ?? true);
+    this.sleepRequired = this.mode === 'survival' && (options.sleepRequired ?? true);
+    this.hungerDecayRate = options.hungerDecayRate ?? 0.5;
+    this.sleepDuration = options.sleepDuration ?? 300;
+    this.tiredDebuff = options.tiredDebuff ?? 20;
+    
     this.players = new Map(); // playerId -> PlayerConnection (network wrapper)
     this.messageRouter = new MessageRouter();
     this.lastTick = Date.now();
@@ -484,6 +498,20 @@ export default class GameServer {
     this.systemManager.add(this.resourceSpawnSystem);     // 48: spawn resources
     this.systemManager.add(new SpawnSystem());            // 50: spawn enemies
     this.systemManager.add(new DespawnSystem());          // 51: despawn far enemies
+
+    // Register survival mode systems if enabled
+    if (this.hungerEnabled) {
+      this.systemManager.add(new HungerSystem(this.io, {
+        decayRate: this.hungerDecayRate,
+      })); // 30: hunger decay
+    }
+
+    if (this.sleepRequired) {
+      this.systemManager.add(new SleepSystem(this.io, {
+        restRequired: this.sleepDuration,
+      })); // 31: fatigue accumulation
+    }
+
     this.systemManager.add(this.questTrackingSystem);    // 90: quest tracking
 
     if (this.mode !== 'survival') {
@@ -877,10 +905,19 @@ export default class GameServer {
     }
 
     // Create ECS entity for the player
+    const survivalConfig = this.mode === 'survival' ? {
+      hungerEnabled: this.hungerEnabled,
+      sleepRequired: this.sleepRequired,
+      hungerDecayRate: this.hungerDecayRate,
+      sleepDuration: this.sleepDuration,
+      tiredDebuff: this.tiredDebuff,
+    } : null;
+
     const entity = EntityFactory.createPlayer(
       playerConn.id, playerConn.socket.id,
       playerConn.name, playerConn.color,
-      spawnX, spawnY
+      spawnX, spawnY,
+      survivalConfig
     );
 
     // Restore saved component data for returning players

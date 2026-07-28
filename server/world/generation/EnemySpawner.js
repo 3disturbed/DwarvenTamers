@@ -6,6 +6,7 @@ export default class EnemySpawner {
     this.noise = noiseGen;
     this.gradient = gradientResolver;
     this.spawnOptions = options.spawnOptions || {};
+    this.densityMultiplier = options.densityMultiplier ?? 1.0;
   }
 
   // Determine enemy spawn points for a chunk
@@ -46,8 +47,9 @@ export default class EnemySpawner {
           const horseMultiplier = entry.isHorse ? (this.spawnOptions.horseSpawnChance ?? 1) : 1;
           if (horseMultiplier <= 0) continue;
 
-          const density = this.gradient.getDensity(gradient, entry) * horseMultiplier;
-          if (noiseVal < density) {
+          const baseDensity = this.gradient.getDensity(gradient, entry) * horseMultiplier;
+          const scaledDensity = Math.min(1, baseDensity * this.densityMultiplier);
+          if (noiseVal < scaledDensity) {
             spawnPoints.push({
               enemyId: entry.id,
               x: worldX,

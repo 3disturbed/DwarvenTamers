@@ -2,9 +2,10 @@ import { CHUNK_SIZE, TILE_SIZE } from '../../../shared/Constants.js';
 import { TILE } from '../../../shared/TileTypes.js';
 
 export default class RiverGenerator {
-  constructor(noiseGen, biomeIndex) {
+  constructor(noiseGen, biomeIndex, options = {}) {
     this.noise = noiseGen;
     this.biomeIndex = biomeIndex;
+    this.densityMultiplier = options.densityMultiplier ?? 1.0;
     // Map of "cx,cy" -> array of {tx, ty, tileId} water tiles for that chunk
     this.waterMap = new Map();
   }
@@ -61,7 +62,8 @@ export default class RiverGenerator {
     while (cx > -8) {
       // Width increases as river flows west (further from source)
       const progress = (sourceCX - cx) / (sourceCX + 8);
-      const width = Math.max(1, Math.floor(1 + progress * 4));
+      const baseWidth = Math.max(1, Math.floor(1 + progress * 4));
+      const width = Math.max(1, Math.floor(baseWidth * this.densityMultiplier));
 
       // Meander using noise
       const worldX = worldTileX * TILE_SIZE;

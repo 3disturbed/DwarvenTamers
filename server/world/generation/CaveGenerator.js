@@ -2,8 +2,9 @@ import { CHUNK_SIZE, TILE_SIZE } from '../../../shared/Constants.js';
 import { TILE } from '../../../shared/TileTypes.js';
 
 export default class CaveGenerator {
-  constructor(noiseGen) {
+  constructor(noiseGen, options = {}) {
     this.noise = noiseGen;
+    this.densityMultiplier = options.densityMultiplier ?? 1.0;
   }
 
   /**
@@ -26,6 +27,7 @@ export default class CaveGenerator {
     const elevScale = biomeData.biome.terrain.elevationScale;
     const baseWorldX = chunkX * CHUNK_SIZE * TILE_SIZE;
     const baseWorldY = chunkY * CHUNK_SIZE * TILE_SIZE;
+    const scaledThreshold = Math.min(1, caveThreshold * this.densityMultiplier);
 
     // First pass: determine which tiles are cave interior
     const isCave = new Array(CHUNK_SIZE * CHUNK_SIZE).fill(false);
@@ -52,7 +54,7 @@ export default class CaveGenerator {
         // Use detail noise at cave scale for tunnel shapes
         const caveNoise = this.noise.detail(worldX, worldY, caveScale);
 
-        if (caveNoise < caveThreshold) {
+        if (caveNoise < scaledThreshold) {
           isCave[idx] = true;
         }
       }

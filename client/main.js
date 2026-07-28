@@ -22,6 +22,15 @@ const DEFAULT_WORLD_OPTIONS = {
   seed: '42',
   horseSpawnChance: 1,
   chestSpawnChance: 1,
+  mobDensityMultiplier: 1.0,
+  resourceDensityMultiplier: 1.0,
+  caveDensityMultiplier: 1.0,
+  waterAmountMultiplier: 1.0,
+  hungerEnabled: true,
+  sleepRequired: true,
+  hungerDecayRate: 0.5,
+  sleepDuration: 300,
+  tiredDebuff: 20,
 };
 const PERFORMANCE_PRESET_KEY = `${APP_STORAGE_PREFIX}performance-preset`; 
 const PERFORMANCE_PRESETS = {
@@ -84,6 +93,10 @@ function startGame() {
   const chestSpawnValue = document.getElementById('chest-spawn-value');
   const helpDialog = document.getElementById('help-dialog');
   const saveDialog = document.getElementById('save-dialog');
+  const terrainModal = document.getElementById('terrain-customization-modal');
+  const terrainStartBtn = document.getElementById('terrain-start-btn');
+  const terrainResetBtn = document.getElementById('terrain-reset-btn');
+  const terrainCancelBtn = document.getElementById('terrain-cancel-btn');
   let loaderReady = false;
   let brandFinished = !brandSplash;
   let brandHandoffDone = !brandSplash;
@@ -97,6 +110,25 @@ function startGame() {
     } catch {
       return { ...DEFAULT_WORLD_OPTIONS };
     }
+  };
+
+  const hasExistingSave = async (mode) => {
+    return new Promise((resolve) => {
+      const dbReq = indexedDB.open('dwarven-tamers-v2');
+      dbReq.onerror = () => resolve(false);
+      dbReq.onsuccess = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains('players')) {
+          resolve(false);
+          return;
+        }
+        const tx = db.transaction('players', 'readonly');
+        const store = tx.objectStore('players');
+        const getReq = store.get(`${mode}:solo-player`);
+        getReq.onsuccess = () => resolve(!!getReq.result);
+        getReq.onerror = () => resolve(false);
+      };
+    });
   };
 
   const worldOptions = loadWorldOptions();
@@ -156,16 +188,34 @@ function startGame() {
       seed: Number.isFinite(parsedSeed) ? parsedSeed : Number.parseInt(DEFAULT_WORLD_OPTIONS.seed, 10),
       horseSpawnChance: Number.parseFloat(horseSpawnInput?.value || `${DEFAULT_WORLD_OPTIONS.horseSpawnChance}`),
       chestSpawnChance: Number.parseFloat(chestSpawnInput?.value || `${DEFAULT_WORLD_OPTIONS.chestSpawnChance}`),
+      mobDensityMultiplier: Number.parseFloat(document.getElementById('mob-density')?.value || DEFAULT_WORLD_OPTIONS.mobDensityMultiplier),
+      resourceDensityMultiplier: Number.parseFloat(document.getElementById('resource-density')?.value || DEFAULT_WORLD_OPTIONS.resourceDensityMultiplier),
+      caveDensityMultiplier: Number.parseFloat(document.getElementById('cave-density')?.value || DEFAULT_WORLD_OPTIONS.caveDensityMultiplier),
+      waterAmountMultiplier: Number.parseFloat(document.getElementById('water-amount')?.value || DEFAULT_WORLD_OPTIONS.waterAmountMultiplier),
     };
 
     if (!Number.isFinite(options.horseSpawnChance)) options.horseSpawnChance = DEFAULT_WORLD_OPTIONS.horseSpawnChance;
     if (!Number.isFinite(options.chestSpawnChance)) options.chestSpawnChance = DEFAULT_WORLD_OPTIONS.chestSpawnChance;
+    if (!Number.isFinite(options.mobDensityMultiplier)) options.mobDensityMultiplier = DEFAULT_WORLD_OPTIONS.mobDensityMultiplier;
+    if (!Number.isFinite(options.resourceDensityMultiplier)) options.resourceDensityMultiplier = DEFAULT_WORLD_OPTIONS.resourceDensityMultiplier;
+    if (!Number.isFinite(options.caveDensityMultiplier)) options.caveDensityMultiplier = DEFAULT_WORLD_OPTIONS.caveDensityMultiplier;
+    if (!Number.isFinite(options.waterAmountMultiplier)) options.waterAmountMultiplier = DEFAULT_WORLD_OPTIONS.waterAmountMultiplier;
 
-    localStorage.setItem(WORLD_OPTIONS_KEY, JSON.stringify({
-      seed: String(options.seed),
-      horseSpawnChance: options.horseSpawnChance,
-      chestSpawnChance: options.chestSpawnChance,
-    }));
+    const saved = { ...options };
+    if (currentGameMode === GAME_MODE_SURVIVAL) {
+      const hungerEnabled = document.getElementById('hunger-enabled')?.checked ?? DEFAULT_WORLD_OPTIONS.hungerEnabled;
+      const sleepRequired = document.getElementById('sleep-required')?.checked ?? DEFAULT_WORLD_OPTIONS.sleepRequired;
+      const hungerDecayRate = Number.parseFloat(document.getElementById('hunger-decay-rate')?.value || DEFAULT_WORLD_OPTIONS.hungerDecayRate);
+      const sleepDuration = Number.parseFloat(document.getElementById('sleep-duration')?.value || DEFAULT_WORLD_OPTIONS.sleepDuration);
+      const tiredDebuff = Number.parseFloat(document.getElementById('tired-debuff')?.value || DEFAULT_WORLD_OPTIONS.tiredDebuff);
+      saved.hungerEnabled = hungerEnabled;
+      saved.sleepRequired = sleepRequired;
+      saved.hungerDecayRate = hungerDecayRate;
+      saved.sleepDuration = sleepDuration;
+      saved.tiredDebuff = tiredDebuff;
+    }
+
+    localStorage.setItem(WORLD_OPTIONS_KEY, JSON.stringify(saved));
 
     return {
       ...options,
@@ -173,8 +223,65 @@ function startGame() {
     };
   };
 
-  const launchGame = (mode = GAME_MODE_NORMAL) => {
+  let currentGameMode = GAME_MODE_NORMAL;
+
+  const populateTerrainModal = (mode) => {
+    if (!terrainModal) return;
+    
+    // Populate general settings from main menu
+    const terrainSeed = document.getElementById('terrain-seed');
+    const terrainHorseSpawn = document.getElementById('terrain-horse-spawn');
+    const terrainChestSpawn = document.getElementById('terrain-chest-spawn');
+    const mobDensity = document.getElementById('mob-density');
+    const resourceDensity = document.getElementById('resource-density');
+    const caveDensity = document.getElementById('cave-density');
+    const waterAmount = document.getElementById('water-amount');
+    
+    if (terrainSeed) terrainSeed.value = seedInput.value;
+    if (terrainHorseSpawn) terrainHorseSpawn.value = horseSpawnInput.value;
+    if (terrainChestSpawn) terrainChestSpawn.value = chestSpawnInput.value;
+    if (mobDensity) mobDensity.value = worldOptions.mobDensityMultiplier ?? DEFAULT_WORLD_OPTIONS.mobDensityMultiplier;
+    if (resourceDensity) resourceDensity.value = worldOptions.resourceDensityMultiplier ?? DEFAULT_WORLD_OPTIONS.resourceDensityMultiplier;
+    if (caveDensity) caveDensity.value = worldOptions.caveDensityMultiplier ?? DEFAULT_WORLD_OPTIONS.caveDensityMultiplier;
+    if (waterAmount) waterAmount.value = worldOptions.waterAmountMultiplier ?? DEFAULT_WORLD_OPTIONS.waterAmountMultiplier;
+    
+    // Show/hide survival settings
+    const survivalSection = document.getElementById('survival-section');
+    if (survivalSection) survivalSection.hidden = (mode !== GAME_MODE_SURVIVAL);
+    
+    if (mode === GAME_MODE_SURVIVAL) {
+      const hungerEnabled = document.getElementById('hunger-enabled');
+      const sleepRequired = document.getElementById('sleep-required');
+      const hungerDecayRate = document.getElementById('hunger-decay-rate');
+      const sleepDuration = document.getElementById('sleep-duration');
+      const tiredDebuff = document.getElementById('tired-debuff');
+      
+      if (hungerEnabled) hungerEnabled.checked = worldOptions.hungerEnabled ?? DEFAULT_WORLD_OPTIONS.hungerEnabled;
+      if (sleepRequired) sleepRequired.checked = worldOptions.sleepRequired ?? DEFAULT_WORLD_OPTIONS.sleepRequired;
+      if (hungerDecayRate) hungerDecayRate.value = worldOptions.hungerDecayRate ?? DEFAULT_WORLD_OPTIONS.hungerDecayRate;
+      if (sleepDuration) sleepDuration.value = worldOptions.sleepDuration ?? DEFAULT_WORLD_OPTIONS.sleepDuration;
+      if (tiredDebuff) tiredDebuff.value = worldOptions.tiredDebuff ?? DEFAULT_WORLD_OPTIONS.tiredDebuff;
+    }
+    
+    updateTerrainLabels();
+  };
+
+  const launchGame = async (mode = GAME_MODE_NORMAL) => {
     if (gameStarted) return;
+    currentGameMode = mode;
+    
+    const hasExisting = await hasExistingSave(mode);
+    const shouldShowModal = terrainModal && !hasExisting;
+    
+    if (shouldShowModal) {
+      mainMenu?.classList.remove('visible');
+      if (mainMenu) mainMenu.hidden = true;
+      populateTerrainModal(mode);
+      terrainModal.hidden = false;
+      terrainModal.classList.add('visible');
+      return;
+    }
+    
     gameStarted = true;
     const launchOptions = getLaunchOptions();
     window.__DWARVEN_TAMERS_MODE = mode;
@@ -257,6 +364,93 @@ function startGame() {
   helpButton?.addEventListener('click', () => helpDialog?.showModal());
   saveButton?.addEventListener('click', () => saveDialog?.showModal());
   settingsClose?.addEventListener('click', () => settingsDialog?.close());
+
+  terrainStartBtn?.addEventListener('click', () => {
+    gameStarted = true;
+    // Copy modal values back to main menu form for getLaunchOptions to read
+    const terrainSeed = document.getElementById('terrain-seed');
+    const terrainHorseSpawn = document.getElementById('terrain-horse-spawn');
+    const terrainChestSpawn = document.getElementById('terrain-chest-spawn');
+    const mobDensity = document.getElementById('mob-density');
+    const resourceDensity = document.getElementById('resource-density');
+    const caveDensity = document.getElementById('cave-density');
+    const waterAmount = document.getElementById('water-amount');
+    
+    if (seedInput && terrainSeed) seedInput.value = terrainSeed.value;
+    if (horseSpawnInput && terrainHorseSpawn) horseSpawnInput.value = terrainHorseSpawn.value;
+    if (chestSpawnInput && terrainChestSpawn) chestSpawnInput.value = terrainChestSpawn.value;
+    if (mobDensity) worldOptions.mobDensityMultiplier = Number.parseFloat(mobDensity.value);
+    if (resourceDensity) worldOptions.resourceDensityMultiplier = Number.parseFloat(resourceDensity.value);
+    if (caveDensity) worldOptions.caveDensityMultiplier = Number.parseFloat(caveDensity.value);
+    if (waterAmount) worldOptions.waterAmountMultiplier = Number.parseFloat(waterAmount.value);
+    
+    const launchOptions = getLaunchOptions();
+    window.__DWARVEN_TAMERS_MODE = currentGameMode;
+    window.__DWARVEN_TAMERS_WORLD_OPTIONS = launchOptions;
+    localStorage.setItem(GAME_MODE_KEY, currentGameMode);
+    if (terrainModal) {
+      terrainModal.classList.remove('visible');
+      terrainModal.hidden = true;
+    }
+    const game = new Game(canvas, launchOptions);
+    game.start();
+  });
+
+  terrainResetBtn?.addEventListener('click', () => {
+    seedInput.value = DEFAULT_WORLD_OPTIONS.seed;
+    horseSpawnInput.value = DEFAULT_WORLD_OPTIONS.horseSpawnChance;
+    chestSpawnInput.value = DEFAULT_WORLD_OPTIONS.chestSpawnChance;
+    document.getElementById('mob-density').value = DEFAULT_WORLD_OPTIONS.mobDensityMultiplier;
+    document.getElementById('resource-density').value = DEFAULT_WORLD_OPTIONS.resourceDensityMultiplier;
+    document.getElementById('cave-density').value = DEFAULT_WORLD_OPTIONS.caveDensityMultiplier;
+    document.getElementById('water-amount').value = DEFAULT_WORLD_OPTIONS.waterAmountMultiplier;
+    if (currentGameMode === GAME_MODE_SURVIVAL) {
+      document.getElementById('hunger-enabled').checked = DEFAULT_WORLD_OPTIONS.hungerEnabled;
+      document.getElementById('sleep-required').checked = DEFAULT_WORLD_OPTIONS.sleepRequired;
+      document.getElementById('hunger-decay-rate').value = DEFAULT_WORLD_OPTIONS.hungerDecayRate;
+      document.getElementById('sleep-duration').value = DEFAULT_WORLD_OPTIONS.sleepDuration;
+      document.getElementById('tired-debuff').value = DEFAULT_WORLD_OPTIONS.tiredDebuff;
+    }
+    updateTerrainLabels();
+  });
+
+  terrainCancelBtn?.addEventListener('click', () => {
+    gameStarted = false;
+    currentGameMode = GAME_MODE_NORMAL;
+    if (terrainModal) {
+      terrainModal.classList.remove('visible');
+      terrainModal.hidden = true;
+    }
+    if (mainMenu) {
+      mainMenu.hidden = false;
+      mainMenu.classList.add('visible');
+    }
+  });
+
+  const updateTerrainLabels = () => {
+    if (horseSpawnValue && horseSpawnInput) horseSpawnValue.textContent = `${Number(horseSpawnInput.value).toFixed(1)}x`;
+    if (chestSpawnValue && chestSpawnInput) chestSpawnValue.textContent = `${Number(chestSpawnInput.value).toFixed(1)}x`;
+    document.getElementById('mob-density-value').textContent = `${Number(document.getElementById('mob-density').value).toFixed(1)}x`;
+    document.getElementById('resource-density-value').textContent = `${Number(document.getElementById('resource-density').value).toFixed(1)}x`;
+    document.getElementById('cave-density-value').textContent = `${Number(document.getElementById('cave-density').value).toFixed(1)}x`;
+    document.getElementById('water-amount-value').textContent = `${Number(document.getElementById('water-amount').value).toFixed(1)}x`;
+    if (currentGameMode === GAME_MODE_SURVIVAL) {
+      document.getElementById('hunger-decay-rate-value').textContent = `${Number(document.getElementById('hunger-decay-rate').value).toFixed(2)} HP/s`;
+      document.getElementById('sleep-duration-value').textContent = `${Number(document.getElementById('sleep-duration').value).toFixed(0)}s`;
+      document.getElementById('tired-debuff-value').textContent = `${Number(document.getElementById('tired-debuff').value).toFixed(0)}%`;
+    }
+  };
+
+  // Add input listeners for terrain modal labels
+  document.getElementById('mob-density')?.addEventListener('input', updateTerrainLabels);
+  document.getElementById('resource-density')?.addEventListener('input', updateTerrainLabels);
+  document.getElementById('cave-density')?.addEventListener('input', updateTerrainLabels);
+  document.getElementById('water-amount')?.addEventListener('input', updateTerrainLabels);
+  document.getElementById('hunger-enabled')?.addEventListener('input', updateTerrainLabels);
+  document.getElementById('sleep-required')?.addEventListener('input', updateTerrainLabels);
+  document.getElementById('hunger-decay-rate')?.addEventListener('input', updateTerrainLabels);
+  document.getElementById('sleep-duration')?.addEventListener('input', updateTerrainLabels);
+  document.getElementById('tired-debuff')?.addEventListener('input', updateTerrainLabels);
 
   // Fullscreen button for mobile - only show on touch devices when not fullscreen
   const fsBtn = document.getElementById('fullscreen-btn');

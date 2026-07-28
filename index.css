@@ -283,11 +283,149 @@ dialog button:focus-visible {
   cursor: pointer;
 }
 .settings-actions button:hover { background: rgba(201,168,76,0.16); }
+#terrain-customization-modal {
+  width: min(700px, calc(100vw - 28px));
+  max-height: min(90vh, 800px);
+  padding: 0;
+  border: 1px solid rgba(201, 168, 76, 0.65);
+  border-radius: 16px;
+  background: linear-gradient(145deg, #171724, #0c0c13);
+  color: #ece8da;
+  box-shadow: 0 24px 90px rgba(0,0,0,0.75);
+  font-family: system-ui, sans-serif;
+}
+#terrain-customization-modal::backdrop {
+  background: rgba(3, 3, 8, 0.82);
+  backdrop-filter: blur(5px);
+}
+#terrain-customization-modal.visible {
+  display: flex;
+  flex-direction: column;
+}
+.terrain-content {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(22px, 5vw, 36px);
+  overflow-y: auto;
+}
+.terrain-content h1 {
+  margin: 0;
+  color: #f2dfaa;
+  font: 700 clamp(1.8rem, 6vw, 2.5rem)/1 Georgia, serif;
+}
+.terrain-intro {
+  margin-top: 10px;
+  color: #aaa8a1;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+.terrain-section {
+  margin-top: 24px;
+}
+.terrain-section h2 {
+  margin: 0 0 14px;
+  color: #e8d48b;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.terrain-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+.terrain-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #d9d4c8;
+  font-size: 0.84rem;
+}
+.terrain-field span {
+  color: #e8d48b;
+  font-weight: 600;
+}
+.terrain-field input[type="text"],
+.terrain-field input[type="range"] {
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.04);
+  color: #e8d48b;
+  font: 0.84rem system-ui, monospace;
+}
+.terrain-field input[type="text"] {
+  font-size: 0.88rem;
+}
+.terrain-field input[type="range"] {
+  padding: 8px;
+  cursor: pointer;
+  accent-color: #c9a84c;
+}
+.terrain-field input[type="text"]:focus,
+.terrain-field input[type="range"]:focus {
+  outline: 2px solid #c9a84c;
+  outline-offset: 1px;
+}
+.terrain-range-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.terrain-range-row input[type="range"] {
+  flex: 1;
+  min-width: 100px;
+}
+.terrain-range-row output {
+  min-width: 50px;
+  text-align: right;
+  color: #c9a84c;
+  font-weight: 600;
+}
+.terrain-checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.terrain-checkbox input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #c9a84c;
+}
+.terrain-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255,255,255,0.09);
+}
+.terrain-btn-primary {
+  padding: 11px 18px;
+  border: 1px solid #c9a84c;
+  border-radius: 8px;
+  background: #c9a84c;
+  color: #111116;
+  font: 800 0.86rem system-ui, sans-serif;
+  cursor: pointer;
+}
+.terrain-btn-primary:hover { background: #e8d48b; }
+.terrain-btn-secondary {
+  padding: 11px 18px;
+  border: 1px solid rgba(201,168,76,0.5);
+  border-radius: 8px;
+  background: transparent;
+  color: #e8d48b;
+  font: 750 0.82rem system-ui, sans-serif;
+  cursor: pointer;
+}
+.terrain-btn-secondary:hover { background: rgba(201,168,76,0.16); }
 @media (max-width: 620px) {
   .help-grid { grid-template-columns: 1fr; }
   .help-content { padding: 22px 18px; }
   #help-dialog { max-height: calc(100vh - 16px); }
   .settings-tabs { grid-template-columns: 1fr; }
+  .terrain-grid { grid-template-columns: 1fr; }
 }
 #brand-splash {
   position: fixed;

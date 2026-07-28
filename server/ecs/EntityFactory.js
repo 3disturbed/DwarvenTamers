@@ -22,11 +22,13 @@ import ChestComponent from './components/ChestComponent.js';
 import HorseComponent from './components/HorseComponent.js';
 import ProjectileComponent from './components/ProjectileComponent.js';
 import DamageZoneComponent from './components/DamageZoneComponent.js';
+import HungerComponent from './components/HungerComponent.js';
+import SleepComponent from './components/SleepComponent.js';
 import { PLAYER_SPEED, PLAYER_SIZE } from '../../shared/Constants.js';
 import { STATION_DB } from '../../shared/StationTypes.js';
 
 export default class EntityFactory {
-  static createPlayer(playerId, socketId, name, color, x, y) {
+  static createPlayer(playerId, socketId, name, color, x, y, survivalConfig = null) {
     const entity = new Entity(playerId);
 
     entity.addComponent(new PositionComponent(x, y));
@@ -67,6 +69,21 @@ export default class EntityFactory {
     entity.addComponent(new AnimationStateComponent());
     entity.addComponent(new SkillComponent());
     entity.addComponent(new QuestComponent());
+
+    // Add survival mode components if enabled
+    if (survivalConfig && survivalConfig.hungerEnabled) {
+      entity.addComponent(new HungerComponent({
+        maxHunger: 100,
+        decayRate: survivalConfig.hungerDecayRate ?? 0.5,
+      }));
+    }
+
+    if (survivalConfig && survivalConfig.sleepRequired) {
+      entity.addComponent(new SleepComponent({
+        restRequired: survivalConfig.sleepDuration ?? 300,
+        tiredDebuff: survivalConfig.tiredDebuff ?? 20,
+      }));
+    }
 
     entity.addTag('player');
     return entity;

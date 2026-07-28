@@ -196,6 +196,116 @@
       <div class="save-actions"><button id="save-close" type="button">Close</button></div>
     </div>
   </dialog>
+  <dialog id="terrain-customization-modal" hidden aria-labelledby="terrain-title">
+    <div class="terrain-content">
+      <p class="help-eyebrow">Customize World</p>
+      <h1 id="terrain-title">World Generation Settings</h1>
+      <p class="terrain-intro">Adjust these parameters to customize your world before starting.</p>
+      
+      <div class="terrain-section">
+        <h2>General Settings</h2>
+        <div class="terrain-grid">
+          <label class="terrain-field">
+            <span>World Seed</span>
+            <input id="terrain-seed" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" value="42">
+          </label>
+          
+          <label class="terrain-field">
+            <span>Mob Density</span>
+            <div class="terrain-range-row">
+              <input id="mob-density" type="range" min="0" max="3" step="0.1" value="1">
+              <output id="mob-density-value">1.0x</output>
+            </div>
+          </label>
+          
+          <label class="terrain-field">
+            <span>Resource Density</span>
+            <div class="terrain-range-row">
+              <input id="resource-density" type="range" min="0" max="3" step="0.1" value="1">
+              <output id="resource-density-value">1.0x</output>
+            </div>
+          </label>
+          
+          <label class="terrain-field">
+            <span>Cave Density</span>
+            <div class="terrain-range-row">
+              <input id="cave-density" type="range" min="0" max="3" step="0.1" value="1">
+              <output id="cave-density-value">1.0x</output>
+            </div>
+          </label>
+          
+          <label class="terrain-field">
+            <span>Water Amount</span>
+            <div class="terrain-range-row">
+              <input id="water-amount" type="range" min="0" max="3" step="0.1" value="1">
+              <output id="water-amount-value">1.0x</output>
+            </div>
+          </label>
+          
+          <label class="terrain-field">
+            <span>Horse Spawn Chance</span>
+            <div class="terrain-range-row">
+              <input id="terrain-horse-spawn" type="range" min="0" max="3" step="0.1" value="1">
+              <output id="terrain-horse-spawn-value">1.0x</output>
+            </div>
+          </label>
+          
+          <label class="terrain-field">
+            <span>Chest Spawn Chance</span>
+            <div class="terrain-range-row">
+              <input id="terrain-chest-spawn" type="range" min="0" max="3" step="0.1" value="1">
+              <output id="terrain-chest-spawn-value">1.0x</output>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div id="survival-section" class="terrain-section" hidden>
+        <h2>Survival Mode Settings</h2>
+        <div class="terrain-grid">
+          <label class="terrain-field terrain-checkbox">
+            <input id="hunger-enabled" type="checkbox" checked>
+            <span>Enable Hunger</span>
+          </label>
+          
+          <label class="terrain-field terrain-checkbox">
+            <input id="sleep-required" type="checkbox" checked>
+            <span>Require Sleep</span>
+          </label>
+          
+          <label class="terrain-field" id="hunger-decay-field" hidden>
+            <span>Hunger Decay Rate</span>
+            <div class="terrain-range-row">
+              <input id="hunger-decay-rate" type="range" min="0.1" max="1" step="0.1" value="0.5">
+              <output id="hunger-decay-rate-value">0.50 HP/s</output>
+            </div>
+          </label>
+          
+          <label class="terrain-field" id="sleep-duration-field" hidden>
+            <span>Sleep Duration</span>
+            <div class="terrain-range-row">
+              <input id="sleep-duration" type="range" min="60" max="600" step="30" value="300">
+              <output id="sleep-duration-value">300s</output>
+            </div>
+          </label>
+          
+          <label class="terrain-field" id="tired-debuff-field" hidden>
+            <span>Tired Debuff (%)</span>
+            <div class="terrain-range-row">
+              <input id="tired-debuff" type="range" min="5" max="50" step="5" value="20">
+              <output id="tired-debuff-value">20%</output>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="terrain-actions">
+        <button id="terrain-start-btn" type="button" class="terrain-btn-primary">Start World</button>
+        <button id="terrain-reset-btn" type="button" class="terrain-btn-secondary">Reset to Defaults</button>
+        <button id="terrain-cancel-btn" type="button" class="terrain-btn-secondary">Cancel</button>
+      </div>
+    </div>
+  </dialog>
   <div id="system-toast" role="status" aria-live="polite">
     <span id="system-toast-message"></span>
     <button id="system-toast-action" type="button" hidden></button>

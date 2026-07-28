@@ -16,13 +16,18 @@ export default class WorldGenerator {
     this.seed = seed;
     this.mode = options.mode || 'normal';
     this.spawnOptions = options.spawnOptions || {};
+    this.mobDensityMultiplier = options.mobDensityMultiplier ?? 1.0;
+    this.resourceDensityMultiplier = options.resourceDensityMultiplier ?? 1.0;
+    this.caveDensityMultiplier = options.caveDensityMultiplier ?? 1.0;
+    this.waterAmountMultiplier = options.waterAmountMultiplier ?? 1.0;
+    
     this.noise = new NoiseGenerator(seed);
     this.gradient = new GradientResolver(biomeIndex);
     this.terrain = new TerrainGenerator(this.noise);
-    this.resources = new ResourcePlacer(this.noise, this.gradient);
-    this.enemies = new EnemySpawner(this.noise, this.gradient, { spawnOptions: this.spawnOptions });
-    this.caves = new CaveGenerator(this.noise);
-    this.rivers = new RiverGenerator(this.noise, biomeIndex);
+    this.resources = new ResourcePlacer(this.noise, this.gradient, { densityMultiplier: this.resourceDensityMultiplier });
+    this.enemies = new EnemySpawner(this.noise, this.gradient, { spawnOptions: this.spawnOptions, densityMultiplier: this.mobDensityMultiplier });
+    this.caves = new CaveGenerator(this.noise, { densityMultiplier: this.caveDensityMultiplier });
+    this.rivers = new RiverGenerator(this.noise, biomeIndex, { densityMultiplier: this.waterAmountMultiplier });
     this.biomeDataMap = biomeDataMap; // biomeId -> {biome.json, tiles.json, resources.json, enemies.json}
     this.townOverlay = new TownTerrainOverlay(biomeIndex);
     this.biomeIndex = biomeIndex;

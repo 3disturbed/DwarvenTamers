@@ -8,11 +8,22 @@
     "seed": 42,
     "tileSize": 32,
     "chunkSize": 16,
-    "viewDistance": 3
+    "viewDistance": 3,
+    "mobDensityMultiplier": 1.0,
+    "resourceDensityMultiplier": 1.0,
+    "caveDensityMultiplier": 1.0,
+    "waterAmountMultiplier": 1.0
   },
   "player": {
     "moveSpeed": 160,
     "spawnX": 512,
     "spawnY": 512
+  },
+  "survival": {
+    "hungerEnabled": true,
+    "hungerDecayRate": 0.5,
+    "sleepRequired": true,
+    "sleepDuration": 300,
+    "tiredDebuff": 20
   }
 }
