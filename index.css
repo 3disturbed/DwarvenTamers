@@ -298,10 +298,6 @@ dialog button:focus-visible {
   background: rgba(3, 3, 8, 0.82);
   backdrop-filter: blur(5px);
 }
-#terrain-customization-modal.visible {
-  display: flex;
-  flex-direction: column;
-}
 .terrain-content {
   display: flex;
   flex-direction: column;

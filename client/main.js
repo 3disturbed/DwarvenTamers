@@ -277,8 +277,7 @@ function startGame() {
       mainMenu?.classList.remove('visible');
       if (mainMenu) mainMenu.hidden = true;
       populateTerrainModal(mode);
-      terrainModal.hidden = false;
-      terrainModal.classList.add('visible');
+      terrainModal.showModal();
       return;
     }
     
@@ -388,10 +387,7 @@ function startGame() {
     window.__DWARVEN_TAMERS_MODE = currentGameMode;
     window.__DWARVEN_TAMERS_WORLD_OPTIONS = launchOptions;
     localStorage.setItem(GAME_MODE_KEY, currentGameMode);
-    if (terrainModal) {
-      terrainModal.classList.remove('visible');
-      terrainModal.hidden = true;
-    }
+    terrainModal?.close();
     const game = new Game(canvas, launchOptions);
     game.start();
   });
@@ -435,10 +431,7 @@ function startGame() {
   terrainCancelBtn?.addEventListener('click', () => {
     gameStarted = false;
     currentGameMode = GAME_MODE_NORMAL;
-    if (terrainModal) {
-      terrainModal.classList.remove('visible');
-      terrainModal.hidden = true;
-    }
+    terrainModal?.close();
     if (mainMenu) {
       mainMenu.hidden = false;
       mainMenu.classList.add('visible');
